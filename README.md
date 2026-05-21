@@ -180,29 +180,58 @@ TODO:
 
 ## Docker Compose deployment
 
-Docker Compose는 배포/검증용 경로입니다. OpenClaw 계정에 Docker 권한이 없는 환경에서는 이 단계는 건너뛰고 Local venv development를 사용하세요.
+Docker Compose는 개발 서버에서 DB까지 포함해 한 번에 띄우는 배포/검증 경로입니다. 구성 서비스는 다음과 같습니다.
 
-`.env`에서 Docker용 DB/Redis URL을 사용합니다.
+- `frontend`: Vite 빌드 결과를 Nginx로 정적 서빙
+- `api`: FastAPI, Alembic migration, seed 자동 실행
+- `db`: PostgreSQL
+- `redis`: Redis
+
+OpenClaw 계정에 Docker 권한이 없는 환경에서는 이 단계는 건너뛰고 Local venv development를 사용하세요.
+
+Docker 배포용 환경 파일은 `.env.deploy`를 권장합니다. `.env`는 로컬 venv 개발용으로 남겨둘 수 있고, `.env.deploy`는 Git에 커밋하지 않습니다.
+
+`.env.deploy`에서 Docker용 DB/Redis URL은 `COMPOSE_DATABASE_URL`, `COMPOSE_REDIS_URL`로 분리되어 있습니다. 그래서 로컬 venv용 `DATABASE_URL`, `REDIS_URL` 값을 그대로 둬도 Compose 컨테이너는 내부 `db`, `redis` 서비스를 사용합니다.
 
 ```text
-DATABASE_URL=postgresql+psycopg://pocaloop:pocaloop_example_password@db:5432/pocaloop
-REDIS_URL=redis://redis:6379/0
+COMPOSE_DATABASE_URL=postgresql+psycopg://pocaloop:pocaloop_example_password@db:5432/pocaloop
+COMPOSE_REDIS_URL=redis://redis:6379/0
+FRONTEND_API_BASE_URL=
+FRONTEND_PORT=8080
 ```
 
 Compose 설정 검증:
 
 ```bash
-cp .env.example .env
-docker compose config
+cp .env.example .env.deploy
+# SECRET_KEY, SEED_ADMIN_PASSWORD는 반드시 바꾸세요.
+docker compose --env-file .env.deploy config
 ```
 
 실행:
 
 ```bash
-docker compose up --build
+docker compose --env-file .env.deploy up --build -d
 ```
 
 컨테이너 시작 시 `alembic upgrade head`와 `python -m app.db.seed`가 자동 실행됩니다.
+
+접속:
+
+```text
+Frontend: http://localhost:8080
+LAN Frontend: http://192.168.10.203:8080
+API health: http://localhost:8000/health
+```
+
+Compose 프론트엔드는 같은 origin에서 API를 호출합니다. Nginx가 `/api`, `/matches`, `/templates`, `/health` 요청을 FastAPI 컨테이너로 프록시하므로 브라우저에서 별도 `VITE_API_BASE_URL`을 지정하지 않아도 됩니다.
+
+로그 확인과 종료:
+
+```bash
+docker compose logs -f api frontend
+docker compose --env-file .env.deploy down
+```
 
 ## Troubleshooting
 
@@ -225,9 +254,19 @@ make dev
 Docker Compose 배포/검증 경로를 사용할 때는 다음 명령을 사용합니다.
 
 ```bash
-docker compose config
-docker compose up --build
+docker compose --env-file .env.deploy config
+docker compose --env-file .env.deploy up --build -d
 ```
+
+Makefile 별칭도 제공합니다.
+
+```bash
+make compose-config
+make deploy-dev
+make compose-down
+```
+
+`make compose-config`와 `make deploy-dev`는 `.env.deploy`가 없으면 `.env.example`에서 복사한 뒤 개발용 랜덤 `SECRET_KEY`, `SEED_ADMIN_PASSWORD`를 자동 생성합니다. 외부 공개 전에는 값을 직접 검토하세요.
 
 ## 마이그레이션과 Seed
 
