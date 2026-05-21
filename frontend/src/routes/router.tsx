@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/app-layout";
+import { AdminPendingPhotocardsPage } from "../pages/admin-pending-photocards";
 import { DashboardPage } from "../pages/dashboard";
 import { DirectMatchesPage } from "../pages/direct-matches";
 import { HavesPage } from "../pages/haves";
@@ -20,7 +21,8 @@ export const router = createBrowserRouter([
       { path: "haves", element: <HavesPage /> },
       { path: "wants", element: <WantsPage /> },
       { path: "matches/direct", element: <DirectMatchesPage /> },
-      { path: "matches/three-way", element: <ThreeWayMatchesPage /> }
+      { path: "matches/three-way", element: <ThreeWayMatchesPage /> },
+      { path: "admin/pending-photocards", element: <AdminPendingPhotocardsPage /> }
     ]
   },
   { path: "*", element: <Navigate to="/dashboard" replace /> }

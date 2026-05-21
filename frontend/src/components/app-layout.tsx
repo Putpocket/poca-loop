@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { HeartHandshake, ListChecks, LogOut, Menu, Repeat2, Shuffle, Star } from "lucide-react";
+import { HeartHandshake, ListChecks, LogOut, Menu, Repeat2, ShieldCheck, Shuffle, Star } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Navigate, Outlet } from "react-router-dom";
 import { api } from "../lib/api";
@@ -12,7 +12,8 @@ const navItems = [
   { to: "/haves", label: "Have", icon: ListChecks },
   { to: "/wants", label: "Want", icon: HeartHandshake },
   { to: "/matches/direct", label: "1:1", icon: Repeat2 },
-  { to: "/matches/three-way", label: "3-way", icon: Shuffle }
+  { to: "/matches/three-way", label: "3-way", icon: Shuffle },
+  { to: "/admin/pending-photocards", label: "검토", icon: ShieldCheck }
 ];
 
 export function AppLayout() {

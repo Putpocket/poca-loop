@@ -50,6 +50,8 @@ export type PendingPhotocard = {
   version: string | null;
   memo: string | null;
   catalog_status: "pending";
+  created_at: string;
+  updated_at: string;
 };
 
 export type Release = {
@@ -180,6 +182,8 @@ export const api = {
   haves: () => request<UserHave[]>("/api/v1/me/cards/haves"),
   wants: () => request<UserWant[]>("/api/v1/me/cards/wants"),
   pendingPhotocards: () => request<PendingPhotocard[]>("/api/v1/me/pending-photocards"),
+  adminPendingPhotocards: (limit = 50) =>
+    request<PendingPhotocard[]>(`/api/v1/admin/pending-photocards?limit=${limit}`),
   createPendingPhotocard: (payload: {
     group_id?: number;
     group_name?: string;

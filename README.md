@@ -215,11 +215,16 @@ Have/Want 등록과 수정 API는 기존 `photocard_id` 방식과 새 `pending_p
 - 거절된 임시 포카는 사용자 화면에서 “카탈로그 반영 거절”처럼 명확히 표시하고, 사용자가 직접 삭제하거나 수정하도록 안내하는 방향이 안전합니다.
 - 거절된 임시 포카는 자동 매칭 대상에서 계속 제외합니다.
 
-이번 단계 TODO:
+이번 단계에서 제공하는 조회 기능:
 
-- 관리자 전용 pending photocard 목록 API
+- `GET /api/v1/admin/pending-photocards`: 관리자 전용 임시 포카 검토 목록
+- 프론트엔드 `/admin/pending-photocards`: 관리자용 조회 전용 검토 화면
+- 일반 사용자는 403 응답을 받으며, 프론트엔드는 “관리자 권한이 필요합니다.” 메시지를 표시합니다.
+
+남은 TODO:
+
 - 관리자 승인/병합/거절 API
-- 관리자 UI
+- 관리자 승인/병합/거절 UI
 - 승인/병합 감사 로그
 - 승인/병합 중복 정리 정책의 상세 규칙
 
@@ -524,6 +529,7 @@ GET  /health
 POST /api/v1/auth/signup      # register
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
+GET  /api/v1/admin/pending-photocards
 GET  /matches/direct
 GET  /matches/three-way
 GET  /templates/me.svg
@@ -546,6 +552,14 @@ GET  /api/v1/auth/me
 ```
 
 카탈로그 조회는 공개이고, 생성/수정/삭제는 관리자 JWT가 필요합니다.
+
+임시 포카 검토 목록도 관리자 JWT가 필요합니다.
+
+```text
+GET /api/v1/admin/pending-photocards?limit=50
+```
+
+현재는 조회 전용입니다. 승인, 병합, 거절, UserHave/UserWant 이전 처리는 아직 TODO입니다.
 
 ## 보안 주의사항
 

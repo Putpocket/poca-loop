@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import AnyHttpUrl, BaseModel, Field, model_validator
@@ -197,6 +197,8 @@ class PendingPhotocardRead(OrmModel):
     version: str | None
     memo: str | None
     catalog_status: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class ConditionGradeCreate(BaseModel):
