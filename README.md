@@ -251,6 +251,25 @@ make test
 make dev
 ```
 
+## Development deployment workflow
+
+기능 추가나 수정 후에는 다음 순서로 검증하고 개발 서버에 재배포합니다.
+
+```bash
+make test
+cd frontend && npm run build && cd ..
+make deploy-dev
+curl http://localhost:8080/health
+```
+
+테스트용 배포를 내릴 때는 컨테이너와 네트워크만 제거합니다. PostgreSQL 데이터 볼륨은 보존됩니다.
+
+```bash
+make compose-down
+```
+
+데이터까지 완전히 지워야 할 때만 별도로 `docker compose --env-file .env.deploy down -v`를 사용합니다.
+
 Docker Compose 배포/검증 경로를 사용할 때는 다음 명령을 사용합니다.
 
 ```bash
