@@ -158,8 +158,26 @@ export const api = {
   conditionGrades: () => request<ConditionGrade[]>("/api/v1/catalog/condition-grades"),
   addHave: (payload: { photocard_id: number; condition_grade_id: number; note?: string }) =>
     request<UserHave>("/api/v1/me/cards/haves", { method: "POST", body: JSON.stringify(payload) }),
+  updateHave: (
+    id: number,
+    payload: { photocard_id?: number; condition_grade_id?: number; note?: string | null }
+  ) =>
+    request<UserHave>(`/api/v1/me/cards/haves/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  deleteHave: (id: number) => request<void>(`/api/v1/me/cards/haves/${id}`, { method: "DELETE" }),
   addWant: (payload: { photocard_id: number; minimum_condition_grade_id?: number; note?: string }) =>
     request<UserWant>("/api/v1/me/cards/wants", { method: "POST", body: JSON.stringify(payload) }),
+  updateWant: (
+    id: number,
+    payload: { photocard_id?: number; minimum_condition_grade_id?: number | null; note?: string | null }
+  ) =>
+    request<UserWant>(`/api/v1/me/cards/wants/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  deleteWant: (id: number) => request<void>(`/api/v1/me/cards/wants/${id}`, { method: "DELETE" }),
   directMatches: () => request<DirectMatch[]>("/matches/direct"),
   threeWayMatches: () => request<ThreeWayMatch[]>("/matches/three-way"),
   svgUrl: () => `${API_BASE_URL}/templates/me.svg`

@@ -2,6 +2,7 @@ from sqlalchemy import select
 
 from app.db.seed import seed_default_data
 from app.models.user_card import ConditionGrade
+from tests.test_direct_matches import login_named_user
 
 
 def login_user(client) -> dict[str, str]:
@@ -49,6 +50,30 @@ def seed_catalog(client, admin_headers):
         headers=admin_headers,
     ).json()
     return card, grade
+
+
+def create_extra_card(client, admin_headers, name="Bunny Night"):
+    group = client.get("/api/v1/catalog/groups").json()[0]
+    member = client.get("/api/v1/catalog/members").json()[0]
+    release = client.get("/api/v1/catalog/releases").json()[0]
+    return client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": group["id"],
+            "member_id": member["id"],
+            "release_id": release["id"],
+            "name": name,
+        },
+        headers=admin_headers,
+    ).json()
+
+
+def create_extra_grade(client, admin_headers, code="EX"):
+    return client.post(
+        "/api/v1/catalog/condition-grades",
+        json={"code": code, "label": f"{code} Grade", "sort_order": 20},
+        headers=admin_headers,
+    ).json()
 
 
 def test_catalog_crud_and_user_have_want(client, admin_headers):
@@ -169,6 +194,176 @@ def test_duplicate_have_and_want_return_409(client, admin_headers):
     first_want = client.post("/api/v1/me/cards/wants", json=want_payload, headers=user_headers)
     duplicate_want = client.post("/api/v1/me/cards/wants", json=want_payload, headers=user_headers)
     assert first_want.status_code == 201
+    assert duplicate_want.status_code == 409
+
+
+def test_user_can_update_own_have(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    new_card = create_extra_card(client, admin_headers)
+    new_grade = create_extra_grade(client, admin_headers)
+    user_headers = login_user(client)
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"], "note": "old"},
+        headers=user_headers,
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/me/cards/haves/{have['id']}",
+        json={
+            "photocard_id": new_card["id"],
+            "condition_grade_id": new_grade["id"],
+            "note": "updated",
+        },
+        headers=user_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["photocard_id"] == new_card["id"]
+    assert response.json()["condition_grade"]["code"] == "EX"
+    assert response.json()["note"] == "updated"
+
+
+def test_user_can_delete_own_have(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_user(client)
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    ).json()
+
+    response = client.delete(f"/api/v1/me/cards/haves/{have['id']}", headers=user_headers)
+    remaining = client.get("/api/v1/me/cards/haves", headers=user_headers)
+
+    assert response.status_code == 204
+    assert remaining.json() == []
+
+
+def test_user_cannot_update_or_delete_other_users_have(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    owner_headers = login_named_user(client, "owner-have@example.com", "owner_have")
+    other_headers = login_named_user(client, "other-have@example.com", "other_have")
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=owner_headers,
+    ).json()
+
+    update = client.patch(
+        f"/api/v1/me/cards/haves/{have['id']}",
+        json={"note": "not mine"},
+        headers=other_headers,
+    )
+    delete = client.delete(f"/api/v1/me/cards/haves/{have['id']}", headers=other_headers)
+
+    assert update.status_code == 404
+    assert delete.status_code == 404
+
+
+def test_user_can_update_own_want(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    new_card = create_extra_card(client, admin_headers)
+    new_grade = create_extra_grade(client, admin_headers)
+    user_headers = login_user(client)
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"], "note": "old"},
+        headers=user_headers,
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/me/cards/wants/{want['id']}",
+        json={
+            "photocard_id": new_card["id"],
+            "minimum_condition_grade_id": new_grade["id"],
+            "note": "updated",
+        },
+        headers=user_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["photocard_id"] == new_card["id"]
+    assert response.json()["minimum_condition_grade"]["code"] == "EX"
+    assert response.json()["note"] == "updated"
+
+
+def test_user_can_delete_own_want(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_user(client)
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    ).json()
+
+    response = client.delete(f"/api/v1/me/cards/wants/{want['id']}", headers=user_headers)
+    remaining = client.get("/api/v1/me/cards/wants", headers=user_headers)
+
+    assert response.status_code == 204
+    assert remaining.json() == []
+
+
+def test_user_cannot_update_or_delete_other_users_want(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    owner_headers = login_named_user(client, "owner-want@example.com", "owner_want")
+    other_headers = login_named_user(client, "other-want@example.com", "other_want")
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=owner_headers,
+    ).json()
+
+    update = client.patch(
+        f"/api/v1/me/cards/wants/{want['id']}",
+        json={"note": "not mine"},
+        headers=other_headers,
+    )
+    delete = client.delete(f"/api/v1/me/cards/wants/{want['id']}", headers=other_headers)
+
+    assert update.status_code == 404
+    assert delete.status_code == 404
+
+
+def test_duplicate_user_card_update_returns_409(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    other_card = create_extra_card(client, admin_headers)
+    other_grade = create_extra_grade(client, admin_headers)
+    user_headers = login_user(client)
+
+    have_a = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": other_card["id"], "condition_grade_id": other_grade["id"]},
+        headers=user_headers,
+    )
+    duplicate_have = client.patch(
+        f"/api/v1/me/cards/haves/{have_a['id']}",
+        json={"photocard_id": other_card["id"], "condition_grade_id": other_grade["id"]},
+        headers=user_headers,
+    )
+
+    want_a = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": other_card["id"], "minimum_condition_grade_id": other_grade["id"]},
+        headers=user_headers,
+    )
+    duplicate_want = client.patch(
+        f"/api/v1/me/cards/wants/{want_a['id']}",
+        json={"photocard_id": other_card["id"]},
+        headers=user_headers,
+    )
+
+    assert duplicate_have.status_code == 409
     assert duplicate_want.status_code == 409
 
 

@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, Group, Member, Photocard, Release } from "../lib/api";
 import { releaseSourceSummary, sourceTypeLabel } from "../lib/release-source";
 import { cn } from "../lib/utils";
@@ -13,6 +13,12 @@ export type CardFormValues = {
   photocard_id: number;
   grade_id: number;
   note?: string;
+};
+
+export type CardFormInitialValues = {
+  photocard_id: number;
+  grade_id: number | null;
+  note?: string | null;
 };
 
 type CatalogChoice<T> = {
@@ -33,11 +39,19 @@ function compactParts(parts: Array<string | null | undefined>) {
 export function CardForm({
   mode,
   pending,
-  onSubmit
+  onSubmit,
+  initialValues,
+  submitLabel,
+  onCancel,
+  resetOnSubmit = true
 }: {
   mode: "have" | "want";
   pending: boolean;
   onSubmit: (values: CardFormValues) => void;
+  initialValues?: CardFormInitialValues;
+  submitLabel?: string;
+  onCancel?: () => void;
+  resetOnSubmit?: boolean;
 }) {
   const [groupId, setGroupId] = useState<number | null>(null);
   const [memberId, setMemberId] = useState<number | null>(null);
@@ -179,6 +193,19 @@ export function CardForm({
     gradesQuery.error;
   const canSubmit = Boolean(photocardId && gradeId) && !pending;
 
+  useEffect(() => {
+    if (!initialValues || !photocards.length) return;
+    const card = photocards.find((item) => item.id === initialValues.photocard_id);
+    setPhotocardId(initialValues.photocard_id);
+    setGradeId(initialValues.grade_id ? String(initialValues.grade_id) : "");
+    setNote(initialValues.note ?? "");
+    if (card) {
+      setGroupId(card.group_id);
+      setMemberId(card.member_id);
+      setReleaseId(card.release_id);
+    }
+  }, [initialValues, photocards]);
+
   function selectGroup(group: Group) {
     setGroupId(group.id);
     setMemberId(null);
@@ -217,7 +244,9 @@ export function CardForm({
         event.preventDefault();
         if (!photocardId || !gradeId) return;
         onSubmit({ photocard_id: photocardId, grade_id: Number(gradeId), note: note || undefined });
-        resetAfterSubmit();
+        if (resetOnSubmit) {
+          resetAfterSubmit();
+        }
       }}
     >
       <ChoiceStep
@@ -304,7 +333,16 @@ export function CardForm({
         />
       </label>
 
-      <Button disabled={!canSubmit}>{pending ? "저장 중" : "추가"}</Button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button className="flex-1" disabled={!canSubmit}>
+          {pending ? "저장 중" : submitLabel ?? "추가"}
+        </Button>
+        {onCancel ? (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            취소
+          </Button>
+        ) : null}
+      </div>
     </form>
   );
 }

@@ -10,6 +10,12 @@ class HaveCreate(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class HaveUpdate(BaseModel):
+    photocard_id: int | None = None
+    condition_grade_id: int | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
 class HaveRead(OrmModel):
     id: int
     photocard_id: int
@@ -21,6 +27,12 @@ class HaveRead(OrmModel):
 
 class WantCreate(BaseModel):
     photocard_id: int
+    minimum_condition_grade_id: int | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
+class WantUpdate(BaseModel):
+    photocard_id: int | None = None
     minimum_condition_grade_id: int | None = None
     note: str | None = Field(default=None, max_length=500)
 
