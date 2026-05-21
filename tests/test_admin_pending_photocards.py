@@ -1,4 +1,4 @@
-from tests.test_catalog_and_user_cards import pending_payload
+from tests.test_catalog_and_user_cards import pending_payload, seed_catalog
 from tests.test_direct_matches import login_named_user
 
 
@@ -80,6 +80,10 @@ def test_admin_pending_photocards_status_filter_accepts_pending_only(client, adm
         "/api/v1/admin/pending-photocards?catalog_status=pending",
         headers=admin_headers,
     )
+    rejected_response = client.get(
+        "/api/v1/admin/pending-photocards?catalog_status=rejected",
+        headers=admin_headers,
+    )
     unsupported_response = client.get(
         "/api/v1/admin/pending-photocards?catalog_status=approved",
         headers=admin_headers,
@@ -87,6 +91,8 @@ def test_admin_pending_photocards_status_filter_accepts_pending_only(client, adm
 
     assert pending_response.status_code == 200
     assert len(pending_response.json()) == 1
+    assert rejected_response.status_code == 200
+    assert rejected_response.json() == []
     assert unsupported_response.status_code == 422
 
 
@@ -100,3 +106,104 @@ def test_my_pending_photocards_still_shows_only_current_user_items(client):
 
     assert response.status_code == 200
     assert [item["id"] for item in response.json()] == [mine["id"]]
+
+
+def test_admin_can_reject_pending_photocard(client, admin_headers):
+    user_headers = login_named_user(client, "reject-owner@example.com", "reject_owner")
+    pending = create_pending(client, user_headers, "reject me")
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "duplicate or unsupported catalog item"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == pending["id"]
+    assert data["catalog_status"] == "rejected"
+    assert data["review_reason"] == "duplicate or unsupported catalog item"
+    assert data["reviewed_by_admin_id"] is not None
+    assert data["reviewed_at"] is not None
+
+
+def test_reject_pending_photocard_requires_login_and_admin(client):
+    user_headers = login_named_user(client, "reject-user@example.com", "reject_user")
+    pending = create_pending(client, user_headers, "protected")
+
+    unauthenticated = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "no auth"},
+    )
+    forbidden = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "not admin"},
+        headers=user_headers,
+    )
+
+    assert unauthenticated.status_code == 401
+    assert forbidden.status_code == 403
+
+
+def test_reject_pending_photocard_returns_404_for_missing_id(client, admin_headers):
+    response = client.post(
+        "/api/v1/admin/pending-photocards/999999/reject",
+        json={"reason": "missing"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 404
+
+
+def test_reject_pending_photocard_is_idempotent(client, admin_headers):
+    user_headers = login_named_user(client, "reject-again@example.com", "reject_again")
+    pending = create_pending(client, user_headers, "reject again")
+
+    first = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "first"},
+        headers=admin_headers,
+    )
+    second = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "second"},
+        headers=admin_headers,
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()["catalog_status"] == "rejected"
+    assert second.json()["review_reason"] == "second"
+
+
+def test_reject_does_not_delete_have_or_want(client, admin_headers):
+    _, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "reject-keeps-cards@example.com", "reject_keeps_cards")
+    pending = create_pending(client, user_headers, "keep references")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    reject = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/reject",
+        json={"reason": "not cataloged"},
+        headers=admin_headers,
+    )
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers)
+    wants = client.get("/api/v1/me/cards/wants", headers=user_headers)
+
+    assert reject.status_code == 200
+    assert haves.status_code == 200
+    assert wants.status_code == 200
+    assert len(haves.json()) == 1
+    assert len(wants.json()) == 1
+    assert haves.json()[0]["pending_photocard"]["catalog_status"] == "rejected"
+    assert haves.json()[0]["pending_photocard"]["review_reason"] == "not cataloged"
+    assert wants.json()[0]["pending_photocard"]["catalog_status"] == "rejected"

@@ -168,10 +168,10 @@ detail: 공방 참여 특전
 
 - 포토카드 사진 업로드, 이미지 저장, 이미지 공개를 하지 않습니다.
 - OCR, AI 이미지 인식, 크롤링, LLM을 사용하지 않습니다.
-- 임시 포카는 정식 카탈로그가 아니며 `catalog_status=pending` 상태입니다.
+- 임시 포카는 정식 카탈로그가 아니며 `catalog_status=pending` 또는 `rejected` 상태입니다.
 - 임시 포카는 현재 자동 매칭이 제한될 수 있습니다. 정식 포카 기반 매칭은 그대로 동작합니다.
 - 교환 전에는 외부 채팅에서 실물 사진과 출처를 반드시 확인해야 합니다.
-- 관리자 승인/병합 기능은 아래 설계만 정리했으며, 관리자 API와 관리자 화면은 아직 만들지 않았습니다.
+- 관리자는 임시 포카를 거절할 수 있습니다. 승인/병합은 아래 설계만 정리했고 아직 만들지 않았습니다.
 
 관련 API:
 
@@ -186,19 +186,20 @@ Have/Want 등록과 수정 API는 기존 `photocard_id` 방식과 새 `pending_p
 
 임시 포카가 계속 `pending` 상태로만 남으면 같은 포카가 여러 이름으로 중복 등록될 수 있습니다. 운영 단계에서는 관리자가 임시 포카를 검토해 정식 카탈로그로 승격하거나 기존 정식 포카에 병합하는 흐름이 필요합니다.
 
-향후 `PendingPhotocard.catalog_status` 상태 전이:
+`PendingPhotocard.catalog_status` 상태 전이:
 
 - `pending`: 사용자가 사진 없이 텍스트로 등록한 초기 상태입니다.
-- `approved`: 관리자가 검토 후 새 정식 `Photocard`로 승인한 상태입니다.
-- `merged`: 관리자가 기존 정식 `Photocard`와 같은 항목이라고 판단해 병합한 상태입니다.
-- `rejected`: 정식 카탈로그로 승인하거나 병합하지 않기로 한 상태입니다.
+- `rejected`: 관리자가 정식 카탈로그로 승인하거나 병합하지 않기로 한 상태입니다.
+- `approved`: 향후 관리자가 검토 후 새 정식 `Photocard`로 승인할 때 사용할 예정입니다.
+- `merged`: 향후 관리자가 기존 정식 `Photocard`와 같은 항목이라고 판단해 병합할 때 사용할 예정입니다.
 
 관리자 검토 흐름:
 
 1. 관리자는 pending photocard 목록을 봅니다.
 2. 그룹, 멤버, 릴리즈/출처, 판매처/이벤트, 장소, 회차, 상세 설명, 카드 설명을 검토합니다.
-3. 관리자는 새 정식 `Photocard` 승인, 기존 `Photocard` 병합, 거절 중 하나를 선택합니다.
-4. 승인/병합 결과는 감사 가능하도록 처리한 관리자, 처리 시각, 대상 정식 `photocard_id`, 사유를 남기는 방향으로 설계합니다.
+3. 현재 관리자는 거절만 실행할 수 있습니다.
+4. 향후 관리자는 새 정식 `Photocard` 승인, 기존 `Photocard` 병합 중 하나도 선택할 수 있게 합니다.
+5. 거절 결과는 `reviewed_by_admin_id`, `reviewed_at`, `review_reason`에 남깁니다. 향후 승인/병합 결과는 별도 감사 로그로 확장하는 방향입니다.
 
 승인/병합 시 데이터 이전 정책:
 
@@ -218,13 +219,15 @@ Have/Want 등록과 수정 API는 기존 `photocard_id` 방식과 새 `pending_p
 이번 단계에서 제공하는 조회 기능:
 
 - `GET /api/v1/admin/pending-photocards`: 관리자 전용 임시 포카 검토 목록
-- 프론트엔드 `/admin/pending-photocards`: 관리자용 조회 전용 검토 화면
+- `POST /api/v1/admin/pending-photocards/{id}/reject`: 관리자 전용 임시 포카 거절
+- 프론트엔드 `/admin/pending-photocards`: 관리자용 검토/거절 화면
 - 일반 사용자는 403 응답을 받으며, 프론트엔드는 “관리자 권한이 필요합니다.” 메시지를 표시합니다.
+- 거절 API는 idempotent하게 동작합니다. 이미 거절된 항목에 다시 요청해도 200으로 `rejected` 상태를 반환하며, 새 사유가 있으면 `review_reason`을 갱신합니다.
 
 남은 TODO:
 
-- 관리자 승인/병합/거절 API
-- 관리자 승인/병합/거절 UI
+- 관리자 승인/병합 API
+- 관리자 승인/병합 UI
 - 승인/병합 감사 로그
 - 승인/병합 중복 정리 정책의 상세 규칙
 
@@ -530,6 +533,7 @@ POST /api/v1/auth/signup      # register
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
 GET  /api/v1/admin/pending-photocards
+POST /api/v1/admin/pending-photocards/{id}/reject
 GET  /matches/direct
 GET  /matches/three-way
 GET  /templates/me.svg
@@ -553,13 +557,24 @@ GET  /api/v1/auth/me
 
 카탈로그 조회는 공개이고, 생성/수정/삭제는 관리자 JWT가 필요합니다.
 
-임시 포카 검토 목록도 관리자 JWT가 필요합니다.
+임시 포카 검토와 거절 API도 관리자 JWT가 필요합니다.
 
 ```text
 GET /api/v1/admin/pending-photocards?limit=50
+POST /api/v1/admin/pending-photocards/{id}/reject
 ```
 
-현재는 조회 전용입니다. 승인, 병합, 거절, UserHave/UserWant 이전 처리는 아직 TODO입니다.
+거절 요청 body:
+
+```json
+{
+  "reason": "정식 카탈로그에 반영하지 않는 사유"
+}
+```
+
+거절은 해당 임시 포카의 `catalog_status`를 `rejected`로 바꾸고 `reviewed_by_admin_id`, `reviewed_at`, `review_reason`을 저장합니다. 이미 거절된 항목에 다시 요청해도 200으로 현재 항목을 반환합니다.
+
+거절은 기존 `UserHave`/`UserWant`를 자동 삭제하지 않습니다. 사용자는 자신의 목록에서 “카탈로그 반영 거절” 배지를 보고 직접 삭제하거나 다른 포카로 수정할 수 있습니다. 승인, 병합, UserHave/UserWant 이전 처리는 아직 TODO입니다.
 
 ## 보안 주의사항
 

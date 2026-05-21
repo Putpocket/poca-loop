@@ -27,6 +27,7 @@ export function HaveCardItem({
       ]
         .filter(Boolean)
         .join(" · ");
+  const isRejected = item.pending_photocard?.catalog_status === "rejected";
   return (
     <Card>
       <CardContent className="grid gap-2">
@@ -42,13 +43,18 @@ export function HaveCardItem({
             {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
             {item.pending_photocard ? (
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge>카탈로그 승인 대기</Badge>
+                <Badge>{isRejected ? "카탈로그 반영 거절" : "카탈로그 승인 대기"}</Badge>
                 <Badge>자동 매칭 제한 가능</Badge>
               </div>
             ) : null}
           </div>
           <Badge>{item.condition_grade.code}</Badge>
         </div>
+        {isRejected ? (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            이 항목은 정식 카탈로그에 반영되지 않았습니다. 필요하면 삭제하거나 다른 포카로 수정하세요.
+          </p>
+        ) : null}
         {item.note ? <p className="text-sm text-slate-600">{item.note}</p> : null}
         <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-2">
           <Button type="button" variant="secondary" onClick={onEdit}>
@@ -86,6 +92,7 @@ export function WantCardItem({
       ]
         .filter(Boolean)
         .join(" · ");
+  const isRejected = item.pending_photocard?.catalog_status === "rejected";
   return (
     <Card>
       <CardContent className="grid gap-2">
@@ -101,13 +108,18 @@ export function WantCardItem({
             {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
             {item.pending_photocard ? (
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge>카탈로그 승인 대기</Badge>
+                <Badge>{isRejected ? "카탈로그 반영 거절" : "카탈로그 승인 대기"}</Badge>
                 <Badge>자동 매칭 제한 가능</Badge>
               </div>
             ) : null}
           </div>
           <Badge>{item.minimum_condition_grade?.code ?? "ANY"}</Badge>
         </div>
+        {isRejected ? (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            이 항목은 정식 카탈로그에 반영되지 않았습니다. 필요하면 삭제하거나 다른 포카로 수정하세요.
+          </p>
+        ) : null}
         {item.note ? <p className="text-sm text-slate-600">{item.note}</p> : null}
         <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-2">
           <Button type="button" variant="secondary" onClick={onEdit}>

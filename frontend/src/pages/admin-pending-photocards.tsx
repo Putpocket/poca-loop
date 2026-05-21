@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "../components/state-blocks";
 import { Alert } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { api, getFriendlyError, PendingPhotocard } from "../lib/api";
 import { sourceTypeLabel } from "../lib/release-source";
@@ -19,9 +20,17 @@ function formatDate(value: string) {
 }
 
 export function AdminPendingPhotocardsPage() {
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["adminPendingPhotocards"],
     queryFn: () => api.adminPendingPhotocards()
+  });
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string | null }) =>
+      api.rejectPendingPhotocard(id, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminPendingPhotocards"] });
+    }
   });
   const errorMessage = query.isError ? getFriendlyError(query.error) : "";
   const needsAdmin = errorMessage.includes("Admin permission");
@@ -34,8 +43,12 @@ export function AdminPendingPhotocardsPage() {
       </div>
 
       <Alert className="bg-amber-50 text-amber-900">
-        이번 화면은 조회 전용입니다. 승인, 병합, 거절은 다음 단계에서 지원 예정이며 아직 실행되지 않습니다.
+        거절은 임시 포카를 정식 카탈로그에 반영하지 않는다는 표시만 남깁니다. 사용자의 Have/Want는 자동 삭제되지 않습니다.
+        승인과 병합은 다음 단계에서 지원 예정입니다.
       </Alert>
+      {rejectMutation.isError ? (
+        <Alert className="border-red-200 bg-red-50 text-red-700">{getFriendlyError(rejectMutation.error)}</Alert>
+      ) : null}
 
       {query.isLoading ? <LoadingState /> : null}
       {query.isError ? (
@@ -46,13 +59,28 @@ export function AdminPendingPhotocardsPage() {
       ) : null}
 
       <div className="grid gap-3">
-        {query.data?.map((item) => <PendingPhotocardReviewCard key={item.id} item={item} />)}
+        {query.data?.map((item) => (
+          <PendingPhotocardReviewCard
+            key={item.id}
+            item={item}
+            rejecting={rejectMutation.isPending}
+            onReject={(reason) => rejectMutation.mutate({ id: item.id, reason })}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function PendingPhotocardReviewCard({ item }: { item: PendingPhotocard }) {
+function PendingPhotocardReviewCard({
+  item,
+  rejecting,
+  onReject
+}: {
+  item: PendingPhotocard;
+  rejecting: boolean;
+  onReject: (reason?: string | null) => void;
+}) {
   const group = item.group_name ?? (item.group_id ? `Group #${item.group_id}` : "그룹 미지정");
   const member = item.member_name ?? (item.member_id ? `Member #${item.member_id}` : "멤버 미지정");
   const source = compactParts([
@@ -64,6 +92,14 @@ function PendingPhotocardReviewCard({ item }: { item: PendingPhotocard }) {
     item.round,
     item.detail
   ]);
+  const isRejected = item.catalog_status === "rejected";
+
+  function reject() {
+    if (isRejected) return;
+    const reason = window.prompt("거절 사유를 입력하세요. 비워두면 사유 없이 거절합니다.");
+    if (reason === null) return;
+    onReject(reason.trim() || null);
+  }
 
   return (
     <Card>
@@ -78,7 +114,7 @@ function PendingPhotocardReviewCard({ item }: { item: PendingPhotocard }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge>#{item.id}</Badge>
-            <Badge>{item.catalog_status}</Badge>
+            <Badge>{isRejected ? "rejected" : "pending"}</Badge>
           </div>
         </div>
       </CardHeader>
@@ -98,12 +134,21 @@ function PendingPhotocardReviewCard({ item }: { item: PendingPhotocard }) {
           <span>등록일: {formatDate(item.created_at)}</span>
           <span>수정일: {formatDate(item.updated_at)}</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge>승인 예정</Badge>
-          <Badge>병합 예정</Badge>
-          <Badge>거절 예정</Badge>
+        {isRejected ? (
+          <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="font-medium">카탈로그 반영 거절</p>
+            {item.review_reason ? <p className="mt-1">사유: {item.review_reason}</p> : null}
+            {item.reviewed_at ? <p className="mt-1 text-xs">처리일: {formatDate(item.reviewed_at)}</p> : null}
+          </div>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="danger" disabled={rejecting || isRejected} onClick={reject}>
+            {isRejected ? "거절됨" : rejecting ? "거절 중" : "거절"}
+          </Button>
+          <Badge>승인 다음 단계 예정</Badge>
+          <Badge>병합 다음 단계 예정</Badge>
         </div>
-        <p className="text-xs text-slate-500">승인/병합/거절 작업은 다음 단계에서 지원 예정입니다.</p>
+        <p className="text-xs text-slate-500">거절은 Have/Want를 삭제하지 않습니다. 승인/병합 작업은 다음 단계에서 지원 예정입니다.</p>
       </CardContent>
     </Card>
   );

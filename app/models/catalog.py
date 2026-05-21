@@ -129,7 +129,10 @@ class PendingPhotocard(Base):
             ")",
             name="ck_pending_photocard_source_type",
         ),
-        CheckConstraint("catalog_status = 'pending'", name="ck_pending_photocard_status"),
+        CheckConstraint(
+            "catalog_status IN ('pending', 'rejected')",
+            name="ck_pending_photocard_status",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -151,6 +154,9 @@ class PendingPhotocard(Base):
     version: Mapped[str | None] = mapped_column(String(120))
     memo: Mapped[str | None] = mapped_column(String(500))
     catalog_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by_admin_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_reason: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -158,6 +164,7 @@ class PendingPhotocard(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    created_by: Mapped["User"] = relationship()
+    created_by: Mapped["User"] = relationship(foreign_keys=[created_by_user_id])
+    reviewed_by_admin: Mapped["User | None"] = relationship(foreign_keys=[reviewed_by_admin_id])
     group: Mapped[Group | None] = relationship()
     member: Mapped[Member | None] = relationship()
