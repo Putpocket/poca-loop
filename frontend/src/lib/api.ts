@@ -7,6 +7,19 @@ export type User = {
   username: string;
 };
 
+export type Group = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+export type Member = {
+  id: number;
+  group_id: number;
+  name: string;
+  stage_name: string | null;
+};
+
 export type Photocard = {
   id: number;
   group_id: number;
@@ -136,6 +149,10 @@ export const api = {
       body: JSON.stringify(payload)
     }),
   me: () => request<User>("/api/v1/auth/me"),
+  groups: () => request<Group[]>("/api/v1/catalog/groups"),
+  members: () => request<Member[]>("/api/v1/catalog/members"),
+  releases: () => request<Release[]>("/api/v1/catalog/releases"),
+  photocards: () => request<Photocard[]>("/api/v1/catalog/photocards"),
   haves: () => request<UserHave[]>("/api/v1/me/cards/haves"),
   wants: () => request<UserWant[]>("/api/v1/me/cards/wants"),
   conditionGrades: () => request<ConditionGrade[]>("/api/v1/catalog/condition-grades"),
