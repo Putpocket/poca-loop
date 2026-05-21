@@ -4,6 +4,14 @@ K-POP 팬덤용 포토카드 교환 매칭 백엔드 MVP입니다. 사용자는 
 
 저작권 있는 포토카드 원본 이미지는 저장하거나 배포하지 않습니다. 이 프로젝트는 포토카드 텍스트 메타데이터와 검증된 외부 링크 중심으로 설계합니다.
 
+## Screenshots
+
+![Login screen](docs/screenshots/login.png)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+![Mobile dashboard](docs/screenshots/mobile-dashboard.png)
+
 ## 기술 스택
 
 - Python 3.12
@@ -270,6 +278,16 @@ make compose-down
 
 데이터까지 완전히 지워야 할 때만 별도로 `docker compose --env-file .env.deploy down -v`를 사용합니다.
 
+Docker 임시 리소스 정리는 기본적으로 볼륨 보존형 명령을 사용합니다.
+
+```bash
+make docker-prune
+```
+
+`make docker-prune`은 `docker system prune -f`만 실행하므로 사용하지 않는 컨테이너, 네트워크, dangling 이미지, 빌드 캐시를 정리하되 PostgreSQL 볼륨은 지우지 않습니다. 이미지 전체 삭제가 필요할 때만 `make docker-prune-all`을 수동으로 사용합니다.
+
+데모 시나리오는 [docs/demo-scenario.md](docs/demo-scenario.md)를 참고하세요.
+
 Docker Compose 배포/검증 경로를 사용할 때는 다음 명령을 사용합니다.
 
 ```bash
@@ -283,6 +301,7 @@ Makefile 별칭도 제공합니다.
 make compose-config
 make deploy-dev
 make compose-down
+make docker-prune
 ```
 
 `make compose-config`와 `make deploy-dev`는 `.env.deploy`가 없으면 `.env.example`에서 복사한 뒤 개발용 랜덤 `SECRET_KEY`, `SEED_ADMIN_PASSWORD`를 자동 생성합니다. 외부 공개 전에는 값을 직접 검토하세요.

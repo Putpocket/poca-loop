@@ -1,4 +1,4 @@
-.PHONY: install migrate seed test dev compose-config deploy-dev compose-down
+.PHONY: install migrate seed test dev compose-config deploy-dev compose-down docker-prune docker-prune-all
 
 VENV ?= .venv
 PYTHON ?= python3
@@ -39,3 +39,9 @@ deploy-dev: $(DEPLOY_ENV)
 
 compose-down:
 	docker compose --env-file $(DEPLOY_ENV) down
+
+docker-prune:
+	docker system prune -f
+
+docker-prune-all:
+	docker system prune -a -f
