@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CardForm, type CardFormValues } from "../components/card-form";
 import { HaveCardItem } from "../components/card-item";
+import { ConditionGuide } from "../components/condition-guide";
 import { EmptyState, ErrorState, LoadingState } from "../components/state-blocks";
 import { Alert } from "../components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -29,6 +30,7 @@ export function HavesPage() {
         <CardContent className="grid gap-3">
           {mutation.isError ? <Alert className="border-red-200 bg-red-50 text-red-700">{getFriendlyError(mutation.error)}</Alert> : null}
           <CardForm mode="have" pending={mutation.isPending} onSubmit={(values) => mutation.mutate(values)} />
+          <ConditionGuide />
         </CardContent>
       </Card>
 
