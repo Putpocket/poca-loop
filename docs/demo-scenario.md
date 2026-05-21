@@ -42,7 +42,7 @@ Password: demo-password-change-me
 
 - Have, Want, 1:1 matches, 3-way matches 카운터가 표시됩니다.
 - 데이터가 없으면 `0`으로 보입니다.
-- `SVG 열기` 버튼이 로그인한 사용자 본인의 텍스트 기반 SVG 체크리스트를 엽니다.
+- `공유용 체크리스트 열기` 버튼이 로그인한 사용자 본인의 텍스트 기반 체크리스트 이미지를 엽니다.
 - 로그아웃 후 `/dashboard`로 직접 접근하면 `/login`으로 이동합니다.
 
 ## 5. Seeded catalog reference

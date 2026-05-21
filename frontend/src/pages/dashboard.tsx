@@ -21,7 +21,7 @@ export function DashboardPage() {
   if (direct.isError) return <ErrorState message={getFriendlyError(direct.error)} />;
   if (threeWay.isError) return <ErrorState message={getFriendlyError(threeWay.error)} />;
 
-  async function openSvgChecklist() {
+  async function openShareChecklist() {
     const response = await fetch(`${API_BASE_URL}/templates/me.svg`, {
       headers: { Authorization: `Bearer ${getToken() ?? ""}` }
     });
@@ -40,9 +40,9 @@ export function DashboardPage() {
             <h1 className="text-2xl font-semibold text-slate-950">Dashboard</h1>
             <p className="mt-1 text-sm text-slate-500">목록을 채우고 가능한 교환 흐름을 확인합니다.</p>
           </div>
-          <Button onClick={openSvgChecklist}>
+          <Button onClick={openShareChecklist}>
             <ExternalLink size={16} />
-            SVG 열기
+            공유용 체크리스트 열기
           </Button>
         </div>
       </section>

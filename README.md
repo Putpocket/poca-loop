@@ -42,7 +42,7 @@ K-POP 팬덤용 포토카드 교환 매칭 백엔드 MVP입니다. 사용자는 
 - 사용자 원하는 카드 등록/조회
 - 1:1 직접 교환 매칭 조회
 - 3자 순환 교환 매칭 조회
-- 로그인 사용자 체크리스트 SVG 생성
+- 로그인 사용자 텍스트 기반 공유용 체크리스트 생성
 - 상태 등급 안내 UI
 - 매칭 결과 기반 교환 제안 텍스트 복사
 - idempotent seed 스크립트
@@ -403,7 +403,7 @@ GET  /api/v1/auth/me
 - 비밀번호는 Argon2 기반 해시로 저장하며 평문 저장하지 않습니다.
 - CORS 기본값은 localhost만 허용합니다. 운영 도메인은 명시적으로 추가하세요.
 - 일반 응답에는 `hashed_password`, 내부 권한 필드, 토큰 서명키, 환경변수 값을 포함하지 않습니다.
-- 매칭 및 SVG API는 로그인한 사용자 본인의 데이터만 반환합니다.
+- 매칭 및 체크리스트 API는 로그인한 사용자 본인의 데이터만 반환합니다.
 
 ## GitHub 업로드 전 점검
 
@@ -511,9 +511,9 @@ curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
 
 `trade_edges`는 실제 카드 이동 방향입니다. 예시는 한 edge만 줄였지만 실제 응답은 3개 edge를 포함합니다. 같은 순환은 `A-B-C`, `B-C-A`, `C-A-B` 형태로 중복 반환되지 않습니다.
 
-## SVG 체크리스트
+## 공유용 체크리스트
 
-로그인한 사용자는 자신의 보유 카드와 원하는 카드 목록을 텍스트 기반 SVG로 받을 수 있습니다. SVG는 로그인한 사용자 본인 데이터만 렌더링하며, 저작권 있는 포토카드 이미지, 외부 이미지, 외부 CSS, 외부 폰트를 사용하지 않습니다.
+로그인한 사용자는 자신의 보유 카드와 원하는 카드 목록을 텍스트 기반 공유용 체크리스트로 받을 수 있습니다. 체크리스트는 로그인한 사용자 본인 데이터만 렌더링하며, 저작권 있는 포토카드 이미지, 외부 이미지, 외부 CSS, 외부 폰트를 사용하지 않습니다.
 
 ```bash
 curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
@@ -529,4 +529,4 @@ curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -o checklist.svg
 ```
 
-응답은 `image/svg+xml` 계열 Content-Type과 `Cache-Control: private, no-store` 헤더를 사용합니다. SVG에는 `username`, HAVE/WANT 카드 메타데이터, 상태 등급만 들어가며 이메일이나 권한 필드는 포함하지 않습니다.
+기술적으로 이 체크리스트는 `/templates/me.svg`에서 생성되는 SVG 응답입니다. 응답은 `image/svg+xml` 계열 Content-Type과 `Cache-Control: private, no-store` 헤더를 사용합니다. 내용에는 `username`, HAVE/WANT 카드 메타데이터, 상태 등급만 들어가며 이메일이나 권한 필드는 포함하지 않습니다.
