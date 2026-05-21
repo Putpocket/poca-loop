@@ -1,0 +1,10 @@
+from fastapi import APIRouter
+
+from app.api.v1 import auth, catalog, matches, templates, user_cards
+
+api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(auth.router)
+api_router.include_router(catalog.router)
+api_router.include_router(user_cards.router)
+api_router.include_router(matches.router)
+api_router.include_router(templates.router)
