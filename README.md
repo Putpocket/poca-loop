@@ -515,6 +515,8 @@ curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
 
 로그인한 사용자는 자신의 보유 카드와 원하는 카드 목록을 텍스트 기반 공유용 체크리스트로 받을 수 있습니다. 체크리스트는 로그인한 사용자 본인 데이터만 렌더링하며, 저작권 있는 포토카드 이미지, 외부 이미지, 외부 CSS, 외부 폰트를 사용하지 않습니다.
 
+사용자 화면에서는 이 기능을 `공유용 체크리스트` 또는 `체크리스트 이미지`로 표현합니다.
+
 ```bash
 curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
   http://localhost:8000/templates/me.svg \
