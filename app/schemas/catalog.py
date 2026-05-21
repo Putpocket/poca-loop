@@ -162,6 +162,43 @@ class PhotocardRead(OrmModel):
     release: ReleaseRead | None = None
 
 
+class PendingPhotocardCreate(BaseModel):
+    group_id: int | None = None
+    group_name: str | None = Field(default=None, max_length=120)
+    member_id: int | None = None
+    member_name: str | None = Field(default=None, max_length=120)
+    source_type: ReleaseSourceType
+    source_title: str = Field(min_length=1, max_length=160)
+    retailer_or_event: str | None = Field(default=None, max_length=160)
+    venue: str | None = Field(default=None, max_length=160)
+    country: str | None = Field(default=None, max_length=80)
+    round: str | None = Field(default=None, max_length=80)
+    detail: str | None = Field(default=None, max_length=255)
+    card_description: str = Field(min_length=1, max_length=255)
+    version: str | None = Field(default=None, max_length=120)
+    memo: str | None = Field(default=None, max_length=500)
+
+
+class PendingPhotocardRead(OrmModel):
+    id: int
+    created_by_user_id: int
+    group_id: int | None
+    group_name: str | None
+    member_id: int | None
+    member_name: str | None
+    source_type: str
+    source_title: str
+    retailer_or_event: str | None
+    venue: str | None
+    country: str | None
+    round: str | None
+    detail: str | None
+    card_description: str
+    version: str | None
+    memo: str | None
+    catalog_status: str
+
+
 class ConditionGradeCreate(BaseModel):
     code: str = Field(min_length=1, max_length=20, pattern=r"^[A-Z0-9_]+$")
     label: str = Field(min_length=1, max_length=80)

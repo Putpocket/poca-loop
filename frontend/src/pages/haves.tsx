@@ -22,6 +22,7 @@ export function HavesPage() {
     mutationFn: (values: CardFormValues) =>
       api.addHave({
         photocard_id: values.photocard_id,
+        pending_photocard_id: values.pending_photocard_id,
         condition_grade_id: values.grade_id,
         note: values.note || undefined
       }),
@@ -35,6 +36,7 @@ export function HavesPage() {
       if (!editing) throw new Error("수정할 항목이 없습니다.");
       return api.updateHave(editing.id, {
         photocard_id: values.photocard_id,
+        pending_photocard_id: values.pending_photocard_id,
         condition_grade_id: values.grade_id,
         note: values.note ?? null
       });
@@ -74,6 +76,7 @@ export function HavesPage() {
               editing
                 ? {
                     photocard_id: editing.photocard_id,
+                    pending_photocard_id: editing.pending_photocard_id,
                     grade_id: editing.condition_grade_id,
                     note: editing.note
                   }

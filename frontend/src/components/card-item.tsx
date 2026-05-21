@@ -15,17 +15,32 @@ export function HaveCardItem({
   onDelete?: () => void;
   deleting?: boolean;
 }) {
+  const cardName = item.photocard?.name ?? item.pending_photocard?.card_description ?? "Unknown card";
+  const releaseTitle = item.photocard?.release?.title ?? item.pending_photocard?.source_title ?? "미지정";
+  const sourceSummary = item.photocard
+    ? releaseSourceSummary(item.photocard.release)
+    : [
+        item.pending_photocard?.retailer_or_event,
+        item.pending_photocard?.venue,
+        item.pending_photocard?.round,
+        item.pending_photocard?.detail
+      ]
+        .filter(Boolean)
+        .join(" · ");
   return (
     <Card>
       <CardContent className="grid gap-2">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-medium text-slate-950">{item.photocard.name}</p>
-            <p className="text-sm text-slate-500">Photocard #{item.photocard.id}</p>
-            <p className="mt-1 text-xs text-slate-500">
-              릴리즈/출처: {item.photocard.release?.title ?? "미지정"}
+            <p className="font-medium text-slate-950">{cardName}</p>
+            <p className="text-sm text-slate-500">
+              {item.photocard ? `Photocard #${item.photocard.id}` : `임시 등록 #${item.pending_photocard?.id}`}
             </p>
-            <p className="text-xs text-slate-500">{releaseSourceSummary(item.photocard.release)}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              릴리즈/출처: {releaseTitle}
+            </p>
+            {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
+            {item.pending_photocard ? <Badge className="mt-2">카탈로그 승인 대기</Badge> : null}
           </div>
           <Badge>{item.condition_grade.code}</Badge>
         </div>
@@ -54,17 +69,32 @@ export function WantCardItem({
   onDelete?: () => void;
   deleting?: boolean;
 }) {
+  const cardName = item.photocard?.name ?? item.pending_photocard?.card_description ?? "Unknown card";
+  const releaseTitle = item.photocard?.release?.title ?? item.pending_photocard?.source_title ?? "미지정";
+  const sourceSummary = item.photocard
+    ? releaseSourceSummary(item.photocard.release)
+    : [
+        item.pending_photocard?.retailer_or_event,
+        item.pending_photocard?.venue,
+        item.pending_photocard?.round,
+        item.pending_photocard?.detail
+      ]
+        .filter(Boolean)
+        .join(" · ");
   return (
     <Card>
       <CardContent className="grid gap-2">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-medium text-slate-950">{item.photocard.name}</p>
-            <p className="text-sm text-slate-500">Photocard #{item.photocard.id}</p>
-            <p className="mt-1 text-xs text-slate-500">
-              릴리즈/출처: {item.photocard.release?.title ?? "미지정"}
+            <p className="font-medium text-slate-950">{cardName}</p>
+            <p className="text-sm text-slate-500">
+              {item.photocard ? `Photocard #${item.photocard.id}` : `임시 등록 #${item.pending_photocard?.id}`}
             </p>
-            <p className="text-xs text-slate-500">{releaseSourceSummary(item.photocard.release)}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              릴리즈/출처: {releaseTitle}
+            </p>
+            {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
+            {item.pending_photocard ? <Badge className="mt-2">카탈로그 승인 대기</Badge> : null}
           </div>
           <Badge>{item.minimum_condition_grade?.code ?? "ANY"}</Badge>
         </div>

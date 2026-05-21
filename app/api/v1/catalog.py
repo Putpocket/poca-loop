@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_admin, get_current_user
 from app.api.errors import commit_or_409, conflict
 from app.db.session import get_db
-from app.models.catalog import Group, Member, Photocard, Release
+from app.models.catalog import Group, Member, PendingPhotocard, Photocard, Release
 from app.models.user_card import ConditionGrade
 from app.models.users import User
 from app.schemas.catalog import (
@@ -25,6 +25,8 @@ from app.schemas.catalog import (
     PhotocardCreate,
     PhotocardRead,
     PhotocardUpdate,
+    PendingPhotocardCreate,
+    PendingPhotocardRead,
     ReleaseCreate,
     ReleaseRead,
     ReleaseUpdate,
@@ -105,6 +107,7 @@ def delete_item(db: Session, item: object) -> None:
 
 
 AdminDep = Annotated[User, Depends(get_current_admin)]
+UserDep = Annotated[User, Depends(get_current_user)]
 DbDep = Annotated[Session, Depends(get_db)]
 
 
@@ -257,6 +260,31 @@ def photocards_update(
 @router.delete("/photocards/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def photocards_delete(item_id: int, db: DbDep, _admin: AdminDep) -> None:
     delete_item(db, get_item_or_404(db, Photocard, item_id))
+
+
+@router.post(
+    "/pending-photocards",
+    response_model=PendingPhotocardRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def pending_photocards_create(
+    payload: PendingPhotocardCreate, db: DbDep, current_user: UserDep
+) -> PendingPhotocard:
+    if payload.group_id is not None:
+        get_item_or_404(db, Group, payload.group_id)
+    if payload.member_id is not None:
+        member = get_item_or_404(db, Member, payload.member_id)
+        if payload.group_id is not None and member.group_id != payload.group_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member is not in group")
+    item = PendingPhotocard(
+        created_by_user_id=current_user.id,
+        catalog_status="pending",
+        **payload.model_dump(),
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
 
 
 @router.get("/condition-grades", response_model=list[ConditionGradeRead])

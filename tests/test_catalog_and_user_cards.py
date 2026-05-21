@@ -389,3 +389,166 @@ def test_external_url_must_be_valid(client, admin_headers):
         headers=admin_headers,
     )
     assert response.status_code == 422
+
+
+def pending_payload(**overrides):
+    payload = {
+        "group_name": "NMIXX",
+        "member_name": "Haewon",
+        "source_type": "popup",
+        "source_title": "Fe3O4: BREAK POP-UP STORE",
+        "retailer_or_event": "JYP SHOP",
+        "venue": "The Hyundai Seoul",
+        "round": "1차",
+        "detail": "5만원 이상 구매 특전",
+        "card_description": "Haewon random photocard",
+        "version": "A",
+        "memo": "No image stored",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_logged_in_user_can_create_pending_photocard(client):
+    user_headers = login_named_user(client, "pending@example.com", "pending_user")
+
+    response = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(),
+        headers=user_headers,
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["catalog_status"] == "pending"
+    assert data["source_type"] == "popup"
+    assert data["card_description"] == "Haewon random photocard"
+
+
+def test_pending_photocard_requires_login(client):
+    response = client.post("/api/v1/catalog/pending-photocards", json=pending_payload())
+    assert response.status_code == 401
+
+
+def test_user_can_list_own_pending_photocards(client):
+    user_a = login_named_user(client, "pending-a@example.com", "pending_a")
+    user_b = login_named_user(client, "pending-b@example.com", "pending_b")
+    mine = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(card_description="mine"),
+        headers=user_a,
+    ).json()
+    client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(card_description="other"),
+        headers=user_b,
+    )
+
+    response = client.get("/api/v1/me/pending-photocards", headers=user_a)
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [mine["id"]]
+
+
+def test_have_and_want_can_use_pending_photocard(client, admin_headers):
+    _, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "pending-card@example.com", "pending_card")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(),
+        headers=user_headers,
+    ).json()
+
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    assert have.status_code == 201
+    assert have.json()["photocard"] is None
+    assert have.json()["pending_photocard"]["card_description"] == "Haewon random photocard"
+    assert want.status_code == 201
+    assert want.json()["photocard"] is None
+    assert want.json()["pending_photocard"]["catalog_status"] == "pending"
+
+
+def test_card_reference_validation_rejects_both_or_neither(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "pending-invalid@example.com", "pending_invalid")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(),
+        headers=user_headers,
+    ).json()
+
+    both = client.post(
+        "/api/v1/me/cards/haves",
+        json={
+            "photocard_id": card["id"],
+            "pending_photocard_id": pending["id"],
+            "condition_grade_id": grade["id"],
+        },
+        headers=user_headers,
+    )
+    neither = client.post(
+        "/api/v1/me/cards/wants",
+        json={"minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    assert both.status_code == 422
+    assert neither.status_code == 422
+
+
+def test_pending_photocard_in_have_want_list_response(client, admin_headers):
+    _, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "pending-list@example.com", "pending_list")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(card_description="list check"),
+        headers=user_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+    wants = client.get("/api/v1/me/cards/wants", headers=user_headers).json()
+
+    assert haves[0]["pending_photocard"]["card_description"] == "list check"
+    assert wants[0]["pending_photocard"]["id"] == pending["id"]
+
+
+def test_existing_official_photocard_have_want_still_work(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "official-still@example.com", "official_still")
+
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    assert have.status_code == 201
+    assert have.json()["pending_photocard"] is None
+    assert have.json()["photocard"]["id"] == card["id"]
+    assert want.status_code == 201
+    assert want.json()["pending_photocard"] is None

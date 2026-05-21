@@ -3,7 +3,7 @@ from html import escape
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.catalog import Photocard
+from app.models.catalog import PendingPhotocard, Photocard
 from app.models.user_card import UserHave, UserWant
 from app.models.users import User
 
@@ -28,6 +28,19 @@ def photocard_label(card: Photocard) -> str:
     return f"{group} / {member} / {release} / {card.name}{version}"
 
 
+def pending_photocard_label(card: PendingPhotocard) -> str:
+    group = card.group.name if card.group else card.group_name or "Unknown group"
+    member = card.member.name if card.member else card.member_name or "Unknown member"
+    version = f" ({card.version})" if card.version else ""
+    return f"{group} / {member} / {card.source_title} / {card.card_description}{version} [pending]"
+
+
+def user_card_label(item: UserHave | UserWant) -> str:
+    if item.photocard is not None:
+        return photocard_label(item.photocard)
+    return pending_photocard_label(item.pending_photocard)
+
+
 def truncate_text(value: str, max_length: int = 130) -> str:
     if len(value) <= max_length:
         return value
@@ -42,6 +55,8 @@ def load_user_cards(db: Session, user: User) -> tuple[list[UserHave], list[UserW
                 selectinload(UserHave.photocard).selectinload(Photocard.group),
                 selectinload(UserHave.photocard).selectinload(Photocard.member),
                 selectinload(UserHave.photocard).selectinload(Photocard.release),
+                selectinload(UserHave.pending_photocard).selectinload(PendingPhotocard.group),
+                selectinload(UserHave.pending_photocard).selectinload(PendingPhotocard.member),
                 selectinload(UserHave.condition_grade),
             )
             .where(UserHave.user_id == user.id)
@@ -55,6 +70,8 @@ def load_user_cards(db: Session, user: User) -> tuple[list[UserHave], list[UserW
                 selectinload(UserWant.photocard).selectinload(Photocard.group),
                 selectinload(UserWant.photocard).selectinload(Photocard.member),
                 selectinload(UserWant.photocard).selectinload(Photocard.release),
+                selectinload(UserWant.pending_photocard).selectinload(PendingPhotocard.group),
+                selectinload(UserWant.pending_photocard).selectinload(PendingPhotocard.member),
                 selectinload(UserWant.minimum_condition_grade),
             )
             .where(UserWant.user_id == user.id)
@@ -108,7 +125,7 @@ def render_svg_checklist(db: Session, user: User) -> str:
     y += 28
     if shown_haves:
         for have in shown_haves:
-            label = photocard_label(have.photocard)
+            label = user_card_label(have)
             meta = f"grade {have.condition_grade.code}"
             if have.note:
                 meta += f" / {have.note}"
@@ -126,7 +143,7 @@ def render_svg_checklist(db: Session, user: User) -> str:
     y += 28
     if shown_wants:
         for want in shown_wants:
-            label = photocard_label(want.photocard)
+            label = user_card_label(want)
             minimum = want.minimum_condition_grade.code if want.minimum_condition_grade else "not specified"
             parts.append(render_row(y, label, f"min grade {minimum}"))
             y += ROW_HEIGHT

@@ -32,6 +32,26 @@ export type Photocard = {
   release: Release | null;
 };
 
+export type PendingPhotocard = {
+  id: number;
+  created_by_user_id: number;
+  group_id: number | null;
+  group_name: string | null;
+  member_id: number | null;
+  member_name: string | null;
+  source_type: string;
+  source_title: string;
+  retailer_or_event: string | null;
+  venue: string | null;
+  country: string | null;
+  round: string | null;
+  detail: string | null;
+  card_description: string;
+  version: string | null;
+  memo: string | null;
+  catalog_status: "pending";
+};
+
 export type Release = {
   id: number;
   group_id: number;
@@ -59,19 +79,23 @@ export type ConditionGrade = {
 
 export type UserHave = {
   id: number;
-  photocard_id: number;
+  photocard_id: number | null;
+  pending_photocard_id: number | null;
   condition_grade_id: number;
   note: string | null;
-  photocard: Photocard;
+  photocard: Photocard | null;
+  pending_photocard: PendingPhotocard | null;
   condition_grade: ConditionGrade;
 };
 
 export type UserWant = {
   id: number;
-  photocard_id: number;
+  photocard_id: number | null;
+  pending_photocard_id: number | null;
   minimum_condition_grade_id: number | null;
   note: string | null;
-  photocard: Photocard;
+  photocard: Photocard | null;
+  pending_photocard: PendingPhotocard | null;
   minimum_condition_grade: ConditionGrade | null;
 };
 
@@ -155,23 +179,44 @@ export const api = {
   photocards: () => request<Photocard[]>("/api/v1/catalog/photocards"),
   haves: () => request<UserHave[]>("/api/v1/me/cards/haves"),
   wants: () => request<UserWant[]>("/api/v1/me/cards/wants"),
+  pendingPhotocards: () => request<PendingPhotocard[]>("/api/v1/me/pending-photocards"),
+  createPendingPhotocard: (payload: {
+    group_id?: number;
+    group_name?: string;
+    member_id?: number;
+    member_name?: string;
+    source_type: string;
+    source_title: string;
+    retailer_or_event?: string;
+    venue?: string;
+    country?: string;
+    round?: string;
+    detail?: string;
+    card_description: string;
+    version?: string;
+    memo?: string;
+  }) =>
+    request<PendingPhotocard>("/api/v1/catalog/pending-photocards", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   conditionGrades: () => request<ConditionGrade[]>("/api/v1/catalog/condition-grades"),
-  addHave: (payload: { photocard_id: number; condition_grade_id: number; note?: string }) =>
+  addHave: (payload: { photocard_id?: number; pending_photocard_id?: number; condition_grade_id: number; note?: string }) =>
     request<UserHave>("/api/v1/me/cards/haves", { method: "POST", body: JSON.stringify(payload) }),
   updateHave: (
     id: number,
-    payload: { photocard_id?: number; condition_grade_id?: number; note?: string | null }
+    payload: { photocard_id?: number; pending_photocard_id?: number; condition_grade_id?: number; note?: string | null }
   ) =>
     request<UserHave>(`/api/v1/me/cards/haves/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload)
     }),
   deleteHave: (id: number) => request<void>(`/api/v1/me/cards/haves/${id}`, { method: "DELETE" }),
-  addWant: (payload: { photocard_id: number; minimum_condition_grade_id?: number; note?: string }) =>
+  addWant: (payload: { photocard_id?: number; pending_photocard_id?: number; minimum_condition_grade_id?: number; note?: string }) =>
     request<UserWant>("/api/v1/me/cards/wants", { method: "POST", body: JSON.stringify(payload) }),
   updateWant: (
     id: number,
-    payload: { photocard_id?: number; minimum_condition_grade_id?: number | null; note?: string | null }
+    payload: { photocard_id?: number; pending_photocard_id?: number; minimum_condition_grade_id?: number | null; note?: string | null }
   ) =>
     request<UserWant>(`/api/v1/me/cards/wants/${id}`, {
       method: "PATCH",

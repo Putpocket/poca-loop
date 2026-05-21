@@ -69,8 +69,14 @@ def get_direct_matches(db: Session, current_user: User, limit: int = 50) -> list
     haves_by_card: dict[int, list[UserHave]] = {}
     wants_by_card: dict[int, list[UserWant]] = {}
     for have in haves:
+        if have.photocard_id is None:
+            # TODO: Add text-identity matching for pending photocards in a later catalog workflow.
+            continue
         haves_by_card.setdefault(have.photocard_id, []).append(have)
     for want in wants:
+        if want.photocard_id is None:
+            # TODO: Add text-identity matching for pending photocards in a later catalog workflow.
+            continue
         wants_by_card.setdefault(want.photocard_id, []).append(want)
 
     generated_at = datetime.now(UTC)
@@ -78,6 +84,8 @@ def get_direct_matches(db: Session, current_user: User, limit: int = 50) -> list
     matches: list[DirectMatchRead] = []
 
     for user_a_have in haves:
+        if user_a_have.photocard_id is None:
+            continue
         if user_a_have.user_id != current_user.id:
             continue
 
@@ -158,8 +166,14 @@ def get_three_way_matches(db: Session, current_user: User, limit: int = 50) -> l
     haves_by_card: dict[int, list[UserHave]] = {}
     wants_by_user: dict[int, list[UserWant]] = {}
     for have in haves:
+        if have.photocard_id is None:
+            # TODO: Add text-identity matching for pending photocards in a later catalog workflow.
+            continue
         haves_by_card.setdefault(have.photocard_id, []).append(have)
     for want in wants:
+        if want.photocard_id is None:
+            # TODO: Add text-identity matching for pending photocards in a later catalog workflow.
+            continue
         wants_by_user.setdefault(want.user_id, []).append(want)
 
     generated_at = datetime.now(UTC)
