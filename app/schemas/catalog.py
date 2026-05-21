@@ -197,6 +197,7 @@ class PendingPhotocardRead(OrmModel):
     version: str | None
     memo: str | None
     catalog_status: str
+    approved_photocard_id: int | None
     reviewed_by_admin_id: int | None
     reviewed_at: datetime | None
     review_reason: str | None

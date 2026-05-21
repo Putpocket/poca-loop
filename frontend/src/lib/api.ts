@@ -49,7 +49,8 @@ export type PendingPhotocard = {
   card_description: string;
   version: string | null;
   memo: string | null;
-  catalog_status: "pending" | "rejected";
+  catalog_status: "pending" | "rejected" | "approved";
+  approved_photocard_id: number | null;
   reviewed_by_admin_id: number | null;
   reviewed_at: string | null;
   review_reason: string | null;
@@ -189,6 +190,23 @@ export const api = {
     request<PendingPhotocard[]>(`/api/v1/admin/pending-photocards?limit=${limit}`),
   rejectPendingPhotocard: (id: number, payload: { reason?: string | null }) =>
     request<PendingPhotocard>(`/api/v1/admin/pending-photocards/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  approvePendingPhotocard: (
+    id: number,
+    payload: {
+      group_id: number;
+      member_id: number;
+      release_id?: number | null;
+      name: string;
+      version?: string | null;
+      external_url?: string | null;
+      notes?: string | null;
+      reason?: string | null;
+    }
+  ) =>
+    request<PendingPhotocard>(`/api/v1/admin/pending-photocards/${id}/approve`, {
       method: "POST",
       body: JSON.stringify(payload)
     }),
