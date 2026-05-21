@@ -446,7 +446,9 @@ export function CardForm({
 
       {selectedMember && selectedRelease && photocardChoices.length === 0 ? (
         <div className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm text-amber-900">찾는 포카가 카탈로그에 없으면 사진 없이 텍스트로 임시 등록할 수 있습니다.</p>
+          <p className="text-sm text-amber-900">
+            찾는 포카가 카탈로그에 없으면 사진 없이 텍스트로 임시 등록할 수 있습니다. 임시 포카는 자동 매칭이 제한될 수 있습니다.
+          </p>
           <Button
             type="button"
             variant="secondary"
@@ -634,7 +636,7 @@ function PendingPhotocardForm({
       <div>
         <p className="text-sm font-semibold text-slate-900">임시 포카 등록</p>
         <p className="mt-1 text-xs text-slate-500">
-          사진은 업로드하지 않습니다. 임시 등록 포카는 정식 카탈로그가 아니며, 교환 전 외부 채팅에서 실물 사진과 출처를 확인해야 합니다.
+          사진은 업로드하지 않습니다. 임시 등록 포카는 정식 카탈로그가 아니며 자동 매칭이 제한될 수 있습니다. 교환 전 외부 채팅에서 실물 사진과 출처를 확인해야 합니다.
         </p>
       </div>
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}

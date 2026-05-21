@@ -62,6 +62,7 @@ export function WantsPage() {
           <CardTitle>{editing ? "원하는 카드 수정" : "원하는 카드 추가"}</CardTitle>
           <CardDescription>
             받고 싶은 카드를 검색/선택하고 최소 허용 등급을 등록합니다. 잘못된 Want는 수정하거나 삭제할 수 있습니다.
+            임시 포카는 자동 매칭이 제한될 수 있습니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">

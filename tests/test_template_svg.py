@@ -162,3 +162,30 @@ def test_template_svg_shows_and_more_when_items_exceed_limit(client, admin_heade
 
     assert response.status_code == 200
     assert "and more..." in response.text
+
+
+def test_template_svg_uses_natural_pending_photocard_label(client, admin_headers):
+    _, grade = create_svg_catalog(client, admin_headers)
+    user = login_named_user(client, "svg-pending@example.com", "svg_pending")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json={
+            "group_name": "NMIXX",
+            "member_name": "Haewon",
+            "source_type": "popup",
+            "source_title": "Fe3O4: BREAK POP-UP STORE",
+            "card_description": "random benefit card",
+        },
+        headers=user,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user,
+    )
+
+    response = client.get("/templates/me.svg", headers=user)
+
+    assert response.status_code == 200
+    assert "NMIXX / Haewon / Fe3O4: BREAK POP-UP STORE / random benefit card [임시 등록]" in response.text
+    assert "[pending]" not in response.text

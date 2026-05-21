@@ -506,6 +506,66 @@ def test_card_reference_validation_rejects_both_or_neither(client, admin_headers
     assert neither.status_code == 422
 
 
+def test_cannot_register_other_users_pending_photocard(client, admin_headers):
+    _, grade = seed_catalog(client, admin_headers)
+    owner_headers = login_named_user(client, "pending-owner@example.com", "pending_owner")
+    other_headers = login_named_user(client, "pending-other@example.com", "pending_other")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(card_description="owner only"),
+        headers=owner_headers,
+    ).json()
+
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=other_headers,
+    )
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=other_headers,
+    )
+
+    assert have.status_code == 404
+    assert want.status_code == 404
+
+
+def test_cannot_update_to_other_users_pending_photocard(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    owner_headers = login_named_user(client, "pending-update-owner@example.com", "pending_update_owner")
+    other_headers = login_named_user(client, "pending-update-other@example.com", "pending_update_other")
+    pending = client.post(
+        "/api/v1/catalog/pending-photocards",
+        json=pending_payload(card_description="not yours"),
+        headers=owner_headers,
+    ).json()
+    have = client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=other_headers,
+    ).json()
+    want = client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=other_headers,
+    ).json()
+
+    have_update = client.patch(
+        f"/api/v1/me/cards/haves/{have['id']}",
+        json={"pending_photocard_id": pending["id"]},
+        headers=other_headers,
+    )
+    want_update = client.patch(
+        f"/api/v1/me/cards/wants/{want['id']}",
+        json={"pending_photocard_id": pending["id"]},
+        headers=other_headers,
+    )
+
+    assert have_update.status_code == 404
+    assert want_update.status_code == 404
+
+
 def test_pending_photocard_in_have_want_list_response(client, admin_headers):
     _, grade = seed_catalog(client, admin_headers)
     user_headers = login_named_user(client, "pending-list@example.com", "pending_list")

@@ -40,7 +40,12 @@ export function HaveCardItem({
               릴리즈/출처: {releaseTitle}
             </p>
             {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
-            {item.pending_photocard ? <Badge className="mt-2">카탈로그 승인 대기</Badge> : null}
+            {item.pending_photocard ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge>카탈로그 승인 대기</Badge>
+                <Badge>자동 매칭 제한 가능</Badge>
+              </div>
+            ) : null}
           </div>
           <Badge>{item.condition_grade.code}</Badge>
         </div>
@@ -94,7 +99,12 @@ export function WantCardItem({
               릴리즈/출처: {releaseTitle}
             </p>
             {sourceSummary ? <p className="text-xs text-slate-500">{sourceSummary}</p> : null}
-            {item.pending_photocard ? <Badge className="mt-2">카탈로그 승인 대기</Badge> : null}
+            {item.pending_photocard ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge>카탈로그 승인 대기</Badge>
+                <Badge>자동 매칭 제한 가능</Badge>
+              </div>
+            ) : null}
           </div>
           <Badge>{item.minimum_condition_grade?.code ?? "ANY"}</Badge>
         </div>

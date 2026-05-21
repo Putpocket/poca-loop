@@ -62,6 +62,7 @@ export function HavesPage() {
           <CardTitle>{editing ? "보유 카드 수정" : "보유 카드 추가"}</CardTitle>
           <CardDescription>
             그룹, 멤버, 릴리즈/출처, 포토카드를 순서대로 선택합니다. 교환 완료 후 더 이상 보유하지 않는 카드는 삭제하세요.
+            임시 포카는 자동 매칭이 제한될 수 있습니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">

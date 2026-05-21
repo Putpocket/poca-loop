@@ -1,18 +1,40 @@
 import type { DirectMatch, ThreeWayMatch, User } from "./api";
 
-function cardLabel(card: { name: string; version?: string | null }) {
-  return [card.name, card.version].filter(Boolean).join(" / ");
+type ProposalCard = {
+  name?: string;
+  card_description?: string;
+  version?: string | null;
+  catalog_status?: string;
+};
+
+const PENDING_CARD_WARNING =
+  "이 항목은 카탈로그 승인 전 임시 등록 포카입니다. 교환 전 외부 채팅에서 실물 사진과 출처를 반드시 확인하세요.";
+
+function cardLabel(card: ProposalCard) {
+  return [card.name ?? card.card_description ?? "임시 등록 포카", card.version].filter(Boolean).join(" / ");
+}
+
+function isPendingCard(card: ProposalCard) {
+  return card.catalog_status === "pending" || Boolean(card.card_description);
+}
+
+function pendingWarningIfNeeded(cards: ProposalCard[]) {
+  return cards.some(isPendingCard) ? ["", PENDING_CARD_WARNING] : [];
 }
 
 export function buildDirectProposalText(match: DirectMatch) {
+  const giveCard = match.user_a_gives.photocard as ProposalCard;
+  const receiveCard = match.user_a_receives.photocard as ProposalCard;
+
   return [
     "[poca-loop 교환 제안]",
     "",
     "제가 줄 카드:",
-    `${cardLabel(match.user_a_gives.photocard)} / 상태 ${match.user_a_gives.condition_grade.code}`,
+    `${cardLabel(giveCard)} / 상태 ${match.user_a_gives.condition_grade.code}`,
     "",
     "제가 받을 카드:",
-    `${cardLabel(match.user_a_receives.photocard)} / 상태 ${match.user_a_receives.condition_grade.code}`,
+    `${cardLabel(receiveCard)} / 상태 ${match.user_a_receives.condition_grade.code}`,
+    ...pendingWarningIfNeeded([giveCard, receiveCard]),
     "",
     "교환 전 실물 사진과 상태를 외부 채팅에서 직접 확인해 주세요.",
     "주소, 계좌, 실명 정보는 poca-loop에 입력하지 마세요.",
@@ -24,6 +46,7 @@ export function buildThreeWayProposalText(match: ThreeWayMatch, currentUser?: Us
   const myGive = currentUser ? match.trade_edges.find((edge) => edge.giver.id === currentUser.id) : undefined;
   const myReceive = currentUser ? match.trade_edges.find((edge) => edge.receiver.id === currentUser.id) : undefined;
   const participants = match.participants.map((user) => `@${user.username}`).join(" → ");
+  const tradeCards = match.trade_edges.map((edge) => edge.card as ProposalCard);
 
   return [
     "[poca-loop 3자 교환 제안]",
@@ -40,6 +63,7 @@ export function buildThreeWayProposalText(match: ThreeWayMatch, currentUser?: Us
     ...match.trade_edges.map(
       (edge) => `@${edge.giver.username} → @${edge.receiver.username}: ${cardLabel(edge.card)} / 상태 ${edge.condition_grade.code}`
     ),
+    ...pendingWarningIfNeeded(tradeCards),
     "",
     "교환 전 실물 사진과 상태를 외부 채팅에서 직접 확인해 주세요.",
     "주소, 계좌, 실명 정보는 poca-loop에 입력하지 마세요.",

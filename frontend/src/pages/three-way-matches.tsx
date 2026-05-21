@@ -24,6 +24,7 @@ export function ThreeWayMatchesPage() {
       <ConditionGuide compact />
       <Alert className="bg-amber-50 text-amber-900">
         poca-loop은 채팅, 거래, 배송, 결제를 중개하지 않습니다. 제안문에는 내부 ID나 이메일을 넣지 않으며, 실제 대화는 외부 채널에서 진행하세요.
+        임시 등록 포카는 자동 매칭이 제한될 수 있습니다.
       </Alert>
       {query.isLoading ? <LoadingState /> : null}
       {query.isError ? <ErrorState message={getFriendlyError(query.error)} /> : null}

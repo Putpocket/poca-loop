@@ -23,6 +23,7 @@ export function DirectMatchesPage() {
       <ConditionGuide compact />
       <Alert className="bg-amber-50 text-amber-900">
         poca-loop은 내장 채팅을 제공하지 않습니다. 교환 제안문을 복사한 뒤, 실제 대화와 실물 사진 확인은 사용자가 선택한 외부 채널에서 진행하세요.
+        임시 등록 포카는 자동 매칭이 제한될 수 있습니다.
       </Alert>
       {query.isLoading ? <LoadingState /> : null}
       {query.isError ? <ErrorState message={getFriendlyError(query.error)} /> : null}

@@ -32,7 +32,7 @@ def pending_photocard_label(card: PendingPhotocard) -> str:
     group = card.group.name if card.group else card.group_name or "Unknown group"
     member = card.member.name if card.member else card.member_name or "Unknown member"
     version = f" ({card.version})" if card.version else ""
-    return f"{group} / {member} / {card.source_title} / {card.card_description}{version} [pending]"
+    return f"{group} / {member} / {card.source_title} / {card.card_description}{version} [임시 등록]"
 
 
 def user_card_label(item: UserHave | UserWant) -> str:
