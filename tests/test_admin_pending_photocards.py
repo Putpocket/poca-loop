@@ -1,3 +1,9 @@
+import pytest
+from sqlalchemy import select
+
+import app.api.v1.admin as admin_api
+from app.models.catalog import PendingPhotocard, Photocard
+from app.models.user_card import UserHave, UserWant
 from app.api.v1.admin import transfer_pending_card_references
 from tests.test_catalog_and_user_cards import pending_payload, seed_catalog
 from tests.test_direct_matches import login_named_user
@@ -358,6 +364,282 @@ def test_approve_transfers_pending_have_and_want_to_new_photocard(client, admin_
     assert wants[0]["photocard_id"] == approved_id
     assert wants[0]["pending_photocard_id"] is None
     assert wants[0]["pending_photocard"] is None
+    assert wants[0]["photocard"]["name"] == "Transferred Card"
+
+
+def test_approve_keeps_transfer_atomic_when_reference_transfer_fails(
+    db, client, admin_headers, monkeypatch
+):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "approve-rollback@example.com", "approve_rollback")
+    pending = create_pending(client, user_headers, "rollback me")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    def fail_transfer(db, pending_id, photocard_id):
+        raise RuntimeError("simulated transfer failure")
+
+    monkeypatch.setattr(admin_api, "transfer_pending_card_references", fail_transfer)
+
+    with pytest.raises(RuntimeError):
+        client.post(
+            f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+            json=approval_payload(card, name="Should Roll Back"),
+            headers=admin_headers,
+        )
+
+    db.expire_all()
+    pending_row = db.get(PendingPhotocard, pending["id"])
+    created = db.scalar(select(Photocard).where(Photocard.name == "Should Roll Back"))
+    have = db.scalar(select(UserHave).where(UserHave.pending_photocard_id == pending["id"]))
+    want = db.scalar(select(UserWant).where(UserWant.pending_photocard_id == pending["id"]))
+
+    assert pending_row.catalog_status == "pending"
+    assert pending_row.approved_photocard_id is None
+    assert created is None
+    assert have is not None
+    assert have.photocard_id is None
+    assert want is not None
+    assert want.photocard_id is None
+
+
+def test_approve_rejects_member_or_release_from_another_group(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    other_group = client.post(
+        "/api/v1/catalog/groups",
+        json={"name": "Other Group", "slug": "other-group"},
+        headers=admin_headers,
+    ).json()
+    other_member = client.post(
+        "/api/v1/catalog/members",
+        json={"group_id": other_group["id"], "name": "Other Member"},
+        headers=admin_headers,
+    ).json()
+    other_release = client.post(
+        "/api/v1/catalog/releases",
+        json={"group_id": other_group["id"], "title": "Other Release", "release_type": "album"},
+        headers=admin_headers,
+    ).json()
+    user_headers = login_named_user(client, "approve-wrong-refs@example.com", "approve_wrong_refs")
+    pending = create_pending(client, user_headers, "wrong refs")
+
+    wrong_member = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json={**approval_payload(card), "member_id": other_member["id"]},
+        headers=admin_headers,
+    )
+    wrong_release = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json={**approval_payload(card), "release_id": other_release["id"]},
+        headers=admin_headers,
+    )
+
+    assert wrong_member.status_code == 400
+    assert wrong_release.status_code == 400
+
+
+def test_approve_returns_409_when_photocard_identity_already_exists(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "approve-duplicate@example.com", "approve_duplicate")
+    pending = create_pending(client, user_headers, "duplicate official")
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name=card["name"], version=card["version"]),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 409
+
+
+def test_approved_reapproval_policy_matches_readme(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "approve-readme@example.com", "approve_readme")
+    pending = create_pending(client, user_headers, "readme policy")
+
+    first = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="README Policy Card", version="A"),
+        headers=admin_headers,
+    )
+    second = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="Different README Policy Card", version="B"),
+        headers=admin_headers,
+    )
+
+    with open("README.md", encoding="utf-8") as readme:
+        readme_text = readme.read()
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()["approved_photocard_id"] == first.json()["approved_photocard_id"]
+    assert "이미 승인된 항목에 다시 요청하면 기존 승인 결과를 200으로 반환합니다" in readme_text
+
+
+def test_approved_card_disappears_from_pending_badges_and_svg(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "approve-svg@example.com", "approve_svg")
+    pending = create_pending(client, user_headers, "svg before approve")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    before_svg = client.get("/api/v1/templates/me.svg", headers=user_headers)
+    approve = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="SVG Approved Card", version="A"),
+        headers=admin_headers,
+    )
+    after_svg = client.get("/api/v1/templates/me.svg", headers=user_headers)
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+
+    assert before_svg.status_code == 200
+    assert "[임시 등록]" in before_svg.text
+    assert approve.status_code == 200
+    assert haves[0]["pending_photocard"] is None
+    assert haves[0]["photocard"]["name"] == "SVG Approved Card"
+    assert after_svg.status_code == 200
+    assert "[임시 등록]" not in after_svg.text
+    assert "SVG Approved Card (A)" in after_svg.text
+
+
+def test_approved_card_participates_in_direct_matches(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_a = login_named_user(client, "approve-direct-a@example.com", "approve_direct_a")
+    user_b = login_named_user(client, "approve-direct-b@example.com", "approve_direct_b")
+    pending = create_pending(client, user_a, "direct approved")
+    other_card = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Direct Other Card",
+        },
+        headers=admin_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": other_card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": other_card["id"], "condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    approve = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="Direct Approved Card"),
+        headers=admin_headers,
+    )
+    approved_id = approve.json()["approved_photocard_id"]
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": approved_id, "minimum_condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+
+    response = client.get("/api/v1/matches/direct", headers=user_a)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    match = response.json()[0]
+    assert match["user_a_gives"]["photocard"]["id"] == approved_id
+    assert match["user_a_gives"]["photocard"]["name"] == "Direct Approved Card"
+    assert "card_description" not in match["user_a_gives"]["photocard"]
+
+
+def test_approved_card_participates_in_three_way_matches(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_a = login_named_user(client, "approve-three-a@example.com", "approve_three_a")
+    user_b = login_named_user(client, "approve-three-b@example.com", "approve_three_b")
+    user_c = login_named_user(client, "approve-three-c@example.com", "approve_three_c")
+    pending = create_pending(client, user_a, "three-way approved")
+    card_b = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Three B Card",
+        },
+        headers=admin_headers,
+    ).json()
+    card_c = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Three C Card",
+        },
+        headers=admin_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card_b["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card_b["id"], "condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card_c["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card_c["id"], "condition_grade_id": grade["id"]},
+        headers=user_c,
+    )
+    approve = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="Three Approved Card"),
+        headers=admin_headers,
+    )
+    approved_id = approve.json()["approved_photocard_id"]
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": approved_id, "minimum_condition_grade_id": grade["id"]},
+        headers=user_c,
+    )
+
+    response = client.get("/api/v1/matches/three-way", headers=user_a)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    match = response.json()[0]
+    assert {edge["card"]["id"] for edge in match["trade_edges"]} == {
+        approved_id,
+        card_b["id"],
+        card_c["id"],
+    }
+    assert all("card_description" not in edge["card"] for edge in match["trade_edges"])
 
 
 def test_transfer_deletes_duplicate_pending_want(db, client, admin_headers):

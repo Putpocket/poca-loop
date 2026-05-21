@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import AnyHttpUrl, BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
@@ -127,37 +128,47 @@ def pending_photocards_approve(
     if item.catalog_status == "approved":
         return item
 
-    ensure_approval_catalog_refs(db, payload)
-    external_url = str(payload.external_url) if payload.external_url is not None else None
-    if db.scalar(
-        select(Photocard).where(
-            Photocard.group_id == payload.group_id,
-            Photocard.member_id == payload.member_id,
-            Photocard.release_id == payload.release_id,
-            Photocard.name == payload.name,
-            Photocard.version == payload.version,
+    try:
+        ensure_approval_catalog_refs(db, payload)
+        external_url = str(payload.external_url) if payload.external_url is not None else None
+        if db.scalar(
+            select(Photocard).where(
+                Photocard.group_id == payload.group_id,
+                Photocard.member_id == payload.member_id,
+                Photocard.release_id == payload.release_id,
+                Photocard.name == payload.name,
+                Photocard.version == payload.version,
+            )
+        ):
+            raise conflict("Photocard already exists")
+
+        photocard = Photocard(
+            group_id=payload.group_id,
+            member_id=payload.member_id,
+            release_id=payload.release_id,
+            name=payload.name,
+            version=payload.version,
+            external_url=external_url,
+            notes=payload.notes,
         )
-    ):
-        raise conflict("Photocard already exists")
+        db.add(photocard)
+        db.flush()
 
-    photocard = Photocard(
-        group_id=payload.group_id,
-        member_id=payload.member_id,
-        release_id=payload.release_id,
-        name=payload.name,
-        version=payload.version,
-        external_url=external_url,
-        notes=payload.notes,
-    )
-    db.add(photocard)
-    db.flush()
-
-    transfer_pending_card_references(db, item.id, photocard.id)
-    item.catalog_status = "approved"
-    item.approved_photocard_id = photocard.id
-    item.reviewed_by_admin_id = admin.id
-    item.reviewed_at = db.scalar(select(func.now()))
-    item.review_reason = payload.reason
-    db.commit()
+        transfer_pending_card_references(db, item.id, photocard.id)
+        item.catalog_status = "approved"
+        item.approved_photocard_id = photocard.id
+        item.reviewed_by_admin_id = admin.id
+        item.reviewed_at = db.scalar(select(func.now()))
+        item.review_reason = payload.reason
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except IntegrityError:
+        db.rollback()
+        raise conflict("Photocard already exists") from None
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(item)
     return item
