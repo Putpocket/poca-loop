@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -41,12 +41,44 @@ class Member(Base):
 
 class Release(Base):
     __tablename__ = "releases"
-    __table_args__ = (UniqueConstraint("group_id", "title", name="uq_release_group_title"),)
+    __table_args__ = (
+        CheckConstraint(
+            "source_type IN ("
+            "'album', 'preorder_benefit', 'store_benefit', 'lucky_draw', 'fansign', "
+            "'broadcast', 'popup', 'concert', 'fanmeeting', 'merch', 'season_greeting', "
+            "'fanclub', 'collab', 'magazine', 'event', 'other'"
+            ")",
+            name="ck_release_source_type",
+        ),
+        UniqueConstraint(
+            "group_id",
+            "title",
+            "source_type",
+            "retailer_or_event",
+            "venue",
+            "country",
+            "round",
+            "detail",
+            "start_date",
+            "end_date",
+            name="uq_release_source_identity",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(40), nullable=False, default="album")
+    # Legacy alias retained for existing clients. New UI/docs use "release/source".
     release_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    retailer_or_event: Mapped[str | None] = mapped_column(String(160))
+    venue: Mapped[str | None] = mapped_column(String(160))
+    country: Mapped[str | None] = mapped_column(String(80))
+    round: Mapped[str | None] = mapped_column(String(80))
+    detail: Mapped[str | None] = mapped_column(String(255))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(String(500))
     released_on: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

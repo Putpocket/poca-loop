@@ -60,8 +60,18 @@ def seed_default_data(db: Session) -> None:
         Release,
         group_id=group.id,
         title="Get Up",
-        defaults={"release_type": "album"},
+        source_type="album",
+        retailer_or_event=None,
+        venue=None,
+        country="KR",
+        round=None,
+        detail=None,
+        start_date=None,
+        end_date=None,
+        defaults={"release_type": "album", "notes": "Album release source"},
     )
+    release.source_type = release.source_type or "album"
+    release.release_type = release.release_type or release.source_type
     existing_card = db.scalar(
         select(Photocard).where(
             Photocard.group_id == group.id,

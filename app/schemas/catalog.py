@@ -1,8 +1,30 @@
 from datetime import date
+from typing import Literal
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, model_validator
 
 from app.schemas.common import OrmModel
+
+ReleaseSourceType = Literal[
+    "album",
+    "preorder_benefit",
+    "store_benefit",
+    "lucky_draw",
+    "fansign",
+    "broadcast",
+    "popup",
+    "concert",
+    "fanmeeting",
+    "merch",
+    "season_greeting",
+    "fanclub",
+    "collab",
+    "magazine",
+    "event",
+    "other",
+]
+
+SOURCE_TYPES = set(ReleaseSourceType.__args__)
 
 
 class GroupCreate(BaseModel):
@@ -43,22 +65,68 @@ class MemberRead(OrmModel):
 class ReleaseCreate(BaseModel):
     group_id: int
     title: str = Field(min_length=1, max_length=160)
-    release_type: str = Field(min_length=1, max_length=40)
+    source_type: ReleaseSourceType | None = None
+    release_type: str | None = Field(default=None, min_length=1, max_length=40)
+    retailer_or_event: str | None = Field(default=None, max_length=160)
+    venue: str | None = Field(default=None, max_length=160)
+    country: str | None = Field(default=None, max_length=80)
+    round: str | None = Field(default=None, max_length=80)
+    detail: str | None = Field(default=None, max_length=255)
+    start_date: date | None = None
+    end_date: date | None = None
+    notes: str | None = Field(default=None, max_length=500)
     released_on: date | None = None
+
+    @model_validator(mode="after")
+    def sync_release_aliases(self) -> "ReleaseCreate":
+        if self.source_type is None and self.release_type is None:
+            self.source_type = "album"
+            self.release_type = "album"
+        elif self.source_type is None and self.release_type is not None:
+            if self.release_type not in SOURCE_TYPES:
+                raise ValueError("release_type must be one of the supported source types")
+            self.source_type = self.release_type  # legacy request compatibility
+        elif self.release_type is None and self.source_type is not None:
+            self.release_type = self.source_type
+        return self
 
 
 class ReleaseUpdate(BaseModel):
     group_id: int | None = None
     title: str | None = Field(default=None, min_length=1, max_length=160)
+    source_type: ReleaseSourceType | None = None
     release_type: str | None = Field(default=None, min_length=1, max_length=40)
+    retailer_or_event: str | None = Field(default=None, max_length=160)
+    venue: str | None = Field(default=None, max_length=160)
+    country: str | None = Field(default=None, max_length=80)
+    round: str | None = Field(default=None, max_length=80)
+    detail: str | None = Field(default=None, max_length=255)
+    start_date: date | None = None
+    end_date: date | None = None
+    notes: str | None = Field(default=None, max_length=500)
     released_on: date | None = None
+
+    @model_validator(mode="after")
+    def validate_legacy_release_type(self) -> "ReleaseUpdate":
+        if self.source_type is None and self.release_type is not None and self.release_type not in SOURCE_TYPES:
+            raise ValueError("release_type must be one of the supported source types")
+        return self
 
 
 class ReleaseRead(OrmModel):
     id: int
     group_id: int
     title: str
+    source_type: str
     release_type: str
+    retailer_or_event: str | None
+    venue: str | None
+    country: str | None
+    round: str | None
+    detail: str | None
+    start_date: date | None
+    end_date: date | None
+    notes: str | None
     released_on: date | None
 
 
@@ -91,6 +159,7 @@ class PhotocardRead(OrmModel):
     version: str | None
     external_url: str | None
     notes: str | None
+    release: ReleaseRead | None = None
 
 
 class ConditionGradeCreate(BaseModel):

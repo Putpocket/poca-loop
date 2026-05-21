@@ -25,7 +25,7 @@ export function HavesPage() {
       <Card>
         <CardHeader>
           <CardTitle>보유 카드 추가</CardTitle>
-          <CardDescription>현재 카탈로그 ID를 기준으로 등록합니다.</CardDescription>
+          <CardDescription>카탈로그 ID를 기준으로 등록하며, 목록에서 릴리즈/출처 정보를 확인할 수 있습니다.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {mutation.isError ? <Alert className="border-red-200 bg-red-50 text-red-700">{getFriendlyError(mutation.error)}</Alert> : null}

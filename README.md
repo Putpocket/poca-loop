@@ -81,6 +81,78 @@ poca-loop은 거래, 배송, 결제 중개 서비스가 아니라 매칭 보조 
 
 최종 상태 판단은 교환 당사자가 외부 채널에서 실물 사진으로 직접 확인해야 합니다.
 
+## 카탈로그 릴리즈/출처 메타데이터
+
+포토카드 출처는 정식 릴리즈뿐 아니라 POB, 럭드, 공방, 팝업, 팬싸, MD처럼 다양합니다. poca-loop은 `source_type`을 큰 분류로만 두고, 실제 세부 구분은 별도 출처 메타데이터 필드에 저장합니다.
+
+지원하는 `source_type`:
+
+```text
+album
+preorder_benefit
+store_benefit
+lucky_draw
+fansign
+broadcast
+popup
+concert
+fanmeeting
+merch
+season_greeting
+fanclub
+collab
+magazine
+event
+other
+```
+
+세부 필드:
+
+- `retailer_or_event`: 판매처, 이벤트명, 방송명 등
+- `venue`: 장소
+- `country`: 국가 또는 지역 코드
+- `round`: 회차, 예약판매, 날짜 등
+- `detail`: 구매 조건, 버전, 특전 조건 등
+- `start_date`, `end_date`: 기간
+- `notes`: 운영 메모
+
+팝업 포카 예시:
+
+```yaml
+source_type: popup
+title: "Fe3O4: BREAK POP-UP STORE"
+retailer_or_event: JYP SHOP
+venue: The Hyundai Seoul
+country: KR
+round: 1차
+detail: 5만원 이상 구매 특전
+notes: 랜덤 포토카드 세트
+```
+
+POB 예시:
+
+```yaml
+source_type: preorder_benefit
+title: "Fe3O4: BREAK"
+retailer_or_event: Apple Music
+country: KR
+round: 예약판매
+detail: POB A ver.
+```
+
+공방 예시:
+
+```yaml
+source_type: broadcast
+title: DASH 활동
+retailer_or_event: MBC 쇼! 음악중심
+country: KR
+round: 2024-01-20
+detail: 공방 참여 특전
+```
+
+기존 API의 `release_type` 필드는 호환성을 위해 유지하지만, 새 문서와 사용자 화면에서는 “릴리즈/출처”와 `source_type`을 기준으로 표현합니다.
+
 ## 환경변수
 
 `.env.example`을 복사해서 `.env`를 만듭니다.

@@ -25,7 +25,7 @@ export function WantsPage() {
       <Card>
         <CardHeader>
           <CardTitle>원하는 카드 추가</CardTitle>
-          <CardDescription>받고 싶은 카드와 최소 허용 등급을 등록합니다.</CardDescription>
+          <CardDescription>받고 싶은 카드와 최소 허용 등급을 등록하고, 목록에서 릴리즈/출처를 확인합니다.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {mutation.isError ? <Alert className="border-red-200 bg-red-50 text-red-700">{getFriendlyError(mutation.error)}</Alert> : null}

@@ -23,7 +23,7 @@ def safe_text(value: object | None) -> str:
 def photocard_label(card: Photocard) -> str:
     group = card.group.name if card.group else "Unknown group"
     member = card.member.name if card.member else "Unknown member"
-    release = card.release.title if card.release else "No release"
+    release = card.release.title if card.release else "No release/source"
     version = f" ({card.version})" if card.version else ""
     return f"{group} / {member} / {release} / {card.name}{version}"
 

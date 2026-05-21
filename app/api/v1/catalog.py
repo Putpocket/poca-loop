@@ -3,6 +3,7 @@ from typing import Annotated, TypeVar
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
@@ -31,6 +32,18 @@ from app.schemas.catalog import (
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 ModelT = TypeVar("ModelT")
+RELEASE_IDENTITY_FIELDS = (
+    "group_id",
+    "title",
+    "source_type",
+    "retailer_or_event",
+    "venue",
+    "country",
+    "round",
+    "detail",
+    "start_date",
+    "end_date",
+)
 
 
 def list_items(db: Session, model: type[ModelT]) -> list[ModelT]:
@@ -61,6 +74,29 @@ def create_item(db: Session, model: type[ModelT], payload: BaseModel) -> ModelT:
     db.add(item)
     commit_or_409(db, "Catalog item already exists", item)
     return item
+
+
+def nullable_eq(column: object, value: object | None) -> ColumnElement[bool]:
+    if value is None:
+        return column.is_(None)  # type: ignore[attr-defined]
+    return column == value  # type: ignore[no-any-return]
+
+
+def release_identity_query(values: dict[str, object | None], exclude_id: int | None = None):
+    checks = [nullable_eq(getattr(Release, field), values[field]) for field in RELEASE_IDENTITY_FIELDS]
+    query = select(Release).where(*checks)
+    if exclude_id is not None:
+        query = query.where(Release.id != exclude_id)
+    return query
+
+
+def release_payload_data(payload: BaseModel, *, exclude_unset: bool = False) -> dict[str, object | None]:
+    data = payload.model_dump(exclude_unset=exclude_unset)
+    if data.get("source_type") is None and data.get("release_type") is not None:
+        data["source_type"] = data["release_type"]
+    if data.get("release_type") is None and data.get("source_type") is not None:
+        data["release_type"] = data["source_type"]
+    return data
 
 
 def delete_item(db: Session, item: object) -> None:
@@ -138,23 +174,35 @@ def releases_list(db: DbDep) -> list[Release]:
 
 @router.post("/releases", response_model=ReleaseRead, status_code=status.HTTP_201_CREATED)
 def releases_create(payload: ReleaseCreate, db: DbDep, _admin: AdminDep) -> Release:
-    if db.scalar(
-        select(Release).where(Release.group_id == payload.group_id, Release.title == payload.title)
-    ):
+    data = release_payload_data(payload)
+    identity = {field: data[field] for field in RELEASE_IDENTITY_FIELDS}
+    if db.scalar(release_identity_query(identity)):
         raise conflict("Release already exists in this group")
-    return create_item(db, Release, payload)
+    item = Release(**data)
+    db.add(item)
+    commit_or_409(db, "Release already exists in this group", item)
+    return item
 
 
 @router.patch("/releases/{item_id}", response_model=ReleaseRead)
 def releases_update(item_id: int, payload: ReleaseUpdate, db: DbDep, _admin: AdminDep) -> Release:
     item = get_item_or_404(db, Release, item_id)
-    group_id = payload.group_id if payload.group_id is not None else item.group_id
-    title = payload.title if payload.title is not None else item.title
-    if db.scalar(
-        select(Release).where(Release.id != item_id, Release.group_id == group_id, Release.title == title)
-    ):
+    data = release_payload_data(payload, exclude_unset=True)
+    if "source_type" not in payload.model_fields_set and "release_type" in payload.model_fields_set:
+        data["source_type"] = data["release_type"]
+    if "release_type" not in payload.model_fields_set and "source_type" in payload.model_fields_set:
+        data["release_type"] = data["source_type"]
+    current = {field: getattr(item, field) for field in RELEASE_IDENTITY_FIELDS}
+    changed_fields = payload.model_fields_set | set(data)
+    for field in RELEASE_IDENTITY_FIELDS:
+        if field in changed_fields or field in ({"source_type", "release_type"} & changed_fields):
+            current[field] = data.get(field)
+    if db.scalar(release_identity_query(current, exclude_id=item_id)):
         raise conflict("Release already exists in this group")
-    return update_item(db, item, payload)
+    for field, value in data.items():
+        setattr(item, field, value)
+    commit_or_409(db, "Release already exists in this group", item)
+    return item
 
 
 @router.delete("/releases/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

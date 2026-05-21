@@ -39,7 +39,10 @@ def create_have(payload: HaveCreate, db: DbDep, current_user: UserDep) -> UserHa
     commit_or_409(db, "Have card already registered", have)
     return db.scalar(
         select(UserHave)
-        .options(selectinload(UserHave.photocard), selectinload(UserHave.condition_grade))
+        .options(
+            selectinload(UserHave.photocard).selectinload(Photocard.release),
+            selectinload(UserHave.condition_grade),
+        )
         .where(UserHave.id == have.id)
     )
 
@@ -49,7 +52,10 @@ def list_haves(db: DbDep, current_user: UserDep) -> list[UserHave]:
     return list(
         db.scalars(
             select(UserHave)
-            .options(selectinload(UserHave.photocard), selectinload(UserHave.condition_grade))
+            .options(
+                selectinload(UserHave.photocard).selectinload(Photocard.release),
+                selectinload(UserHave.condition_grade),
+            )
             .where(UserHave.user_id == current_user.id)
             .order_by(UserHave.id)
         ).all()
@@ -73,7 +79,10 @@ def create_want(payload: WantCreate, db: DbDep, current_user: UserDep) -> UserWa
     commit_or_409(db, "Want card already registered", want)
     return db.scalar(
         select(UserWant)
-        .options(selectinload(UserWant.photocard), selectinload(UserWant.minimum_condition_grade))
+        .options(
+            selectinload(UserWant.photocard).selectinload(Photocard.release),
+            selectinload(UserWant.minimum_condition_grade),
+        )
         .where(UserWant.id == want.id)
     )
 
@@ -83,7 +92,10 @@ def list_wants(db: DbDep, current_user: UserDep) -> list[UserWant]:
     return list(
         db.scalars(
             select(UserWant)
-            .options(selectinload(UserWant.photocard), selectinload(UserWant.minimum_condition_grade))
+            .options(
+                selectinload(UserWant.photocard).selectinload(Photocard.release),
+                selectinload(UserWant.minimum_condition_grade),
+            )
             .where(UserWant.user_id == current_user.id)
             .order_by(UserWant.id)
         ).all()

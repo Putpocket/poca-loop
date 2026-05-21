@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.models.catalog import Photocard
 from app.models.user_card import ConditionGrade, UserHave, UserWant
 from app.models.users import User
 from app.schemas.matching import (
@@ -35,7 +36,7 @@ def load_active_haves_and_wants(db: Session) -> tuple[list[UserHave], list[UserW
             select(UserHave)
             .options(
                 selectinload(UserHave.user),
-                selectinload(UserHave.photocard),
+                selectinload(UserHave.photocard).selectinload(Photocard.release),
                 selectinload(UserHave.condition_grade),
             )
             .join(User)
@@ -47,7 +48,7 @@ def load_active_haves_and_wants(db: Session) -> tuple[list[UserHave], list[UserW
             select(UserWant)
             .options(
                 selectinload(UserWant.user),
-                selectinload(UserWant.photocard),
+                selectinload(UserWant.photocard).selectinload(Photocard.release),
                 selectinload(UserWant.minimum_condition_grade),
             )
             .join(User)

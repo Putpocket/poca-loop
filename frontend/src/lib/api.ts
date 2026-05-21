@@ -16,6 +16,24 @@ export type Photocard = {
   version: string | null;
   external_url: string | null;
   notes: string | null;
+  release: Release | null;
+};
+
+export type Release = {
+  id: number;
+  group_id: number;
+  title: string;
+  source_type: string;
+  release_type: string;
+  retailer_or_event: string | null;
+  venue: string | null;
+  country: string | null;
+  round: string | null;
+  detail: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  notes: string | null;
+  released_on: string | null;
 };
 
 export type ConditionGrade = {
