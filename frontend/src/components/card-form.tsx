@@ -591,8 +591,9 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
   emptyText: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const [focused, setFocused] = useState(false);
   const visibleChoices = choices.slice(0, 20);
-  const showSummary = Boolean(selectedChoice && !editing && !query);
+  const showChoices = !disabled && (editing || focused || Boolean(query));
 
   useEffect(() => {
     if (!selectedId) setEditing(false);
@@ -604,45 +605,39 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
         {selectedChoice ? <Badge>선택됨</Badge> : null}
       </div>
-      {showSummary && selectedChoice ? (
-        <div className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-950">{selectedChoice.title}</p>
-            <p className="truncate text-xs text-slate-500">
-              {compactParts([selectedChoice.subtitle, selectedChoice.meta]) || "선택 완료"}
-            </p>
-          </div>
-          <Button
-            className="h-8 shrink-0 px-3 text-xs"
-            type="button"
-            variant="secondary"
+      <div className="relative">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
+          <Input
+            className="pl-9"
+            placeholder={selectedChoice ? "변경하려면 검색" : "검색"}
+            value={query}
             disabled={disabled}
-            onClick={() => setEditing(true)}
-          >
-            변경
-          </Button>
-        </div>
-      ) : (
-        <>
-          <label className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
-            <Input
-              className="pl-9"
-              placeholder="검색"
-              value={query}
-              disabled={disabled}
-              onChange={(event) => onQueryChange(event.target.value)}
-            />
-          </label>
-          <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border border-slate-100 bg-slate-50 p-2">
-            {!disabled && visibleChoices.length ? (
+            onFocus={() => {
+              setFocused(true);
+              setEditing(true);
+            }}
+            onBlur={() => {
+              window.setTimeout(() => setFocused(false), 120);
+            }}
+            onChange={(event) => {
+              setEditing(true);
+              onQueryChange(event.target.value);
+            }}
+          />
+        </label>
+        {showChoices ? (
+          <div className="absolute left-0 right-0 top-full z-20 mt-2 grid max-h-56 gap-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-lg">
+            {visibleChoices.length ? (
               visibleChoices.map((choice) => (
                 <button
                   type="button"
                   key={choice.item.id}
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     onSelect(choice);
                     setEditing(false);
+                    setFocused(false);
                   }}
                   className={cn(
                     "rounded-md border bg-white p-2.5 text-left transition hover:border-slate-300 hover:bg-slate-50",
@@ -657,12 +652,36 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
             ) : (
               <p className="px-2 py-3 text-sm text-slate-500">{emptyText}</p>
             )}
-            {!disabled && choices.length > visibleChoices.length ? (
+            {choices.length > visibleChoices.length ? (
               <p className="px-2 py-1 text-xs text-slate-500">검색어를 더 입력하면 결과를 좁힐 수 있습니다.</p>
             ) : null}
           </div>
-        </>
-      )}
+        ) : null}
+      </div>
+      <div className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+        {selectedChoice ? (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-slate-950">{selectedChoice.title}</p>
+            <p className="truncate text-xs text-slate-500">
+              {compactParts([selectedChoice.subtitle, selectedChoice.meta]) || "선택 완료"}
+            </p>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-500">{disabled ? "이전 단계 필요" : "선택 대기"}</p>
+            <p className="text-xs text-slate-400">{disabled ? emptyText : "검색해서 항목을 선택하세요."}</p>
+          </div>
+        )}
+        <Button
+          className="h-8 shrink-0 px-3 text-xs"
+          type="button"
+          variant="secondary"
+          disabled={disabled}
+          onClick={() => setEditing(true)}
+        >
+          {selectedChoice ? "변경" : "검색"}
+        </Button>
+      </div>
     </section>
   );
 }
