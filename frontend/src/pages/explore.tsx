@@ -309,13 +309,15 @@ function ChoiceFilter({
   onSelect: (id: number | string) => void;
   onClear: () => void;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const selected = choices.find((choice) => String(choice.id) === String(selectedId));
   const visibleChoices = choices
     .filter((choice) => `${choice.title} ${choice.subtitle ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))
     .slice(0, 5);
+  const showList = !selected && (isOpen || query.trim().length > 0);
 
   return (
-    <section className="grid gap-2">
+    <section className="relative grid gap-2">
       <span className="text-xs font-medium text-slate-500">{label}</span>
       {selected ? (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
@@ -339,20 +341,27 @@ function ChoiceFilter({
             className="h-11 rounded-lg bg-white pl-9"
             placeholder={placeholder}
             value={query}
+            onFocus={() => setIsOpen(true)}
+            onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
             onChange={(event) => onQueryChange(event.target.value)}
           />
         </label>
       )}
 
-      {!selected ? (
-        <div className="grid max-h-52 gap-1 overflow-y-auto rounded-lg border border-slate-100 bg-white p-1.5">
+      {showList ? (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 grid max-h-56 gap-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
           {visibleChoices.length ? (
             visibleChoices.map((choice) => (
               <button
                 key={choice.id}
                 type="button"
                 className="flex items-start justify-between gap-2 rounded-md px-2 py-2 text-left transition hover:bg-slate-50"
-                onClick={() => onSelect(choice.id)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  onSelect(choice.id);
+                  onQueryChange("");
+                  setIsOpen(false);
+                }}
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-slate-900">{choice.title}</span>

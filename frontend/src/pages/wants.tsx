@@ -13,7 +13,6 @@ export function WantsPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<UserWant | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [showConditionGuide, setShowConditionGuide] = useState(false);
   const wants = useQuery({ queryKey: ["wants"], queryFn: api.wants });
   function refreshUserCards() {
     queryClient.invalidateQueries({ queryKey: ["wants"] });
@@ -89,12 +88,7 @@ export function WantsPage() {
             onCancel={editing ? () => setEditing(null) : undefined}
             onSubmit={(values) => (editing ? updateMutation.mutate(values) : mutation.mutate(values))}
           />
-          <div className="grid gap-2 border-t border-slate-100 pt-3">
-            <Button type="button" variant="ghost" onClick={() => setShowConditionGuide((value) => !value)}>
-              {showConditionGuide ? "상태 등급 접기" : "상태 등급 보기"}
-            </Button>
-            {showConditionGuide ? <ConditionGuide /> : null}
-          </div>
+          <ConditionGuide compact />
         </CardContent>
       </Card>
 
@@ -108,7 +102,7 @@ export function WantsPage() {
           {wants.isError ? <ErrorState message={getFriendlyError(wants.error)} /> : null}
           {wants.data?.length === 0 ? (
             <div className="grid min-h-60 place-items-center gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
-              <EmptyState title="아직 원하는 카드가 없어요." description="왼쪽에서 받고 싶은 카드를 추가해보세요." />
+              <EmptyState title="아직 원하는 카드가 없어요." description="받고 싶은 카드를 추가해보세요." />
               <Button className="w-fit" type="button" variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 원하는 카드 추가하기
               </Button>
