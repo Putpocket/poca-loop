@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from app.db.seed import seed_default_data
+from app.models.catalog import Group, Member, Photocard, Release
 from app.models.user_card import ConditionGrade
 from tests.test_direct_matches import login_named_user
 
@@ -178,6 +179,37 @@ def test_seed_creates_default_condition_grades_idempotently(client, db):
 
     grades = db.scalars(select(ConditionGrade).order_by(ConditionGrade.sort_order)).all()
     assert [grade.code for grade in grades] == ["S", "A", "B", "C", "D"]
+
+
+def test_seed_creates_korean_nmixx_catalog_idempotently(client, db):
+    seed_default_data(db)
+    seed_default_data(db)
+
+    group = db.scalar(select(Group).where(Group.slug == "nmixx"))
+    assert group is not None
+
+    members = db.scalars(select(Member).where(Member.group_id == group.id).order_by(Member.id)).all()
+    assert [member.name for member in members] == ["릴리", "해원", "설윤", "배이", "지우", "규진"]
+    assert [member.stage_name for member in members] == ["Lily", "Haewon", "Sullyoon", "Bae", "Jiwoo", "Kyujin"]
+
+    heavy_serenade = db.scalar(
+        select(Release).where(
+            Release.group_id == group.id,
+            Release.title == "Heavy Serenade",
+            Release.detail == "Heavy / Serenade",
+        )
+    )
+    assert heavy_serenade is not None
+    assert heavy_serenade.released_on.isoformat() == "2026-05-11"
+
+    heavy_cards = db.scalars(
+        select(Photocard).where(
+            Photocard.group_id == group.id,
+            Photocard.release_id == heavy_serenade.id,
+            Photocard.name == "Album Photocard",
+        )
+    ).all()
+    assert sorted(card.version for card in heavy_cards) == ["규진", "릴리", "배이", "설윤", "지우", "해원"]
 
 
 def test_duplicate_have_and_want_return_409(client, admin_headers):

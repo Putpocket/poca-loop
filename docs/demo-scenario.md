@@ -50,9 +50,9 @@ Password: demo-password-change-me
 기본 seed는 아래 카탈로그 메타데이터를 만듭니다.
 
 - Group: `NMIXX`
-- Member: `Haewon`
-- Release: `Fe3O4: BREAK`
-- Photocard: `Dash`, version `Sample`
+- Members: `릴리`, `해원`, `설윤`, `배이`, `지우`, `규진`
+- Releases/sources: `AD MARE`부터 `Heavy Serenade`까지 주요 앨범, POB, 럭드, 팬싸, 방송, 팝업/리테일러 특전 텍스트 메타데이터
+- Photocards: 멤버별 텍스트 카탈로그 항목
 - Condition grades: `S`, `A`, `B`, `C`, `D`
 
 관리자 카탈로그 UI는 아직 없으므로, 일반 UI의 보유/원함 등록은 기존 카탈로그 ID를 입력하는 MVP 형태입니다.
