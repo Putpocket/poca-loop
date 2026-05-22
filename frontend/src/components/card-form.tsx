@@ -299,18 +299,21 @@ export function CardForm({
     setReleaseId(null);
     setPhotocardId(null);
     setPendingPhotocardId(null);
+    setQueries((current) => ({ ...current, group: "", member: "", release: "", photocard: "" }));
   }
 
   function selectMember(member: Member) {
     setMemberId(member.id);
     setPhotocardId(null);
     setPendingPhotocardId(null);
+    setQueries((current) => ({ ...current, member: "", photocard: "" }));
   }
 
   function selectRelease(release: Release) {
     setReleaseId(release.id);
     setPhotocardId(null);
     setPendingPhotocardId(null);
+    setQueries((current) => ({ ...current, release: "", photocard: "" }));
     setPendingDraft((current) => ({
       ...current,
       group: selectedGroup?.name ?? current.group,
@@ -335,10 +338,12 @@ export function CardForm({
     if (choice.kind === "official") {
       setPhotocardId(choice.item.id);
       setPendingPhotocardId(null);
+      setQueries((current) => ({ ...current, photocard: "" }));
       return;
     }
     setPhotocardId(null);
     setPendingPhotocardId(choice.item.id);
+    setQueries((current) => ({ ...current, photocard: "" }));
   }
 
   async function createPendingPhotocard() {
@@ -397,32 +402,56 @@ export function CardForm({
         }
       }}
     >
-      <ChoiceStep
-        title="1. 그룹 선택"
-        query={queries.group}
-        onQueryChange={(value) => setQueries((current) => ({ ...current, group: value }))}
-        choices={groupChoices}
-        selectedId={groupId}
-        onSelect={(choice) => selectGroup(choice.item)}
-        emptyText="검색된 그룹이 없습니다."
-      />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ChoiceStep
+          title="1. 그룹"
+          query={queries.group}
+          onQueryChange={(value) => setQueries((current) => ({ ...current, group: value }))}
+          choices={groupChoices}
+          selectedChoice={
+            selectedGroup ? { item: selectedGroup, title: selectedGroup.name, subtitle: selectedGroup.slug } : null
+          }
+          selectedId={groupId}
+          onSelect={(choice) => selectGroup(choice.item)}
+          emptyText="검색된 그룹이 없습니다."
+        />
+
+        <ChoiceStep
+          title="2. 멤버"
+          query={queries.member}
+          onQueryChange={(value) => setQueries((current) => ({ ...current, member: value }))}
+          choices={memberChoices}
+          selectedChoice={
+            selectedMember
+              ? {
+                  item: selectedMember,
+                  title: selectedMember.name,
+                  subtitle: selectedMember.stage_name ?? selectedGroup?.name
+                }
+              : null
+          }
+          selectedId={memberId}
+          onSelect={(choice) => selectMember(choice.item)}
+          disabled={!selectedGroup}
+          emptyText={selectedGroup ? "검색된 멤버가 없습니다." : "먼저 그룹을 선택하세요."}
+        />
+      </div>
 
       <ChoiceStep
-        title="2. 멤버 선택"
-        query={queries.member}
-        onQueryChange={(value) => setQueries((current) => ({ ...current, member: value }))}
-        choices={memberChoices}
-        selectedId={memberId}
-        onSelect={(choice) => selectMember(choice.item)}
-        disabled={!selectedGroup}
-        emptyText={selectedGroup ? "검색된 멤버가 없습니다." : "먼저 그룹을 선택하세요."}
-      />
-
-      <ChoiceStep
-        title="3. 릴리즈/출처 선택"
+        title="3. 릴리즈/출처"
         query={queries.release}
         onQueryChange={(value) => setQueries((current) => ({ ...current, release: value }))}
         choices={releaseChoices}
+        selectedChoice={
+          selectedRelease
+            ? {
+                item: selectedRelease,
+                title: selectedRelease.title,
+                subtitle: releaseSourceSummary(selectedRelease),
+                meta: sourceTypeLabel(selectedRelease.source_type)
+              }
+            : null
+        }
         selectedId={releaseId}
         onSelect={(choice) => selectRelease(choice.item)}
         disabled={!selectedGroup}
@@ -430,10 +459,33 @@ export function CardForm({
       />
 
       <ChoiceStep
-        title="4. 포토카드 선택"
+        title="4. 포토카드"
         query={queries.photocard}
         onQueryChange={(value) => setQueries((current) => ({ ...current, photocard: value }))}
         choices={photocardChoices}
+        selectedChoice={
+          selectedPhotocard
+            ? {
+                kind: "official",
+                item: selectedPhotocard,
+                title: selectedPhotocard.name,
+                subtitle: compactParts([selectedGroup?.name, selectedMember?.name, selectedRelease?.title]),
+                meta: selectedPhotocard.version ? `ver. ${selectedPhotocard.version}` : undefined
+              }
+            : selectedPendingPhotocard
+              ? {
+                  kind: "pending",
+                  item: selectedPendingPhotocard,
+                  title: selectedPendingPhotocard.card_description,
+                  subtitle: compactParts([
+                    selectedPendingPhotocard.group_name ?? selectedGroup?.name,
+                    selectedPendingPhotocard.member_name ?? selectedMember?.name,
+                    selectedPendingPhotocard.source_title
+                  ]),
+                  meta: "임시 등록 항목"
+                }
+              : null
+        }
         selectedId={photocardId ?? pendingPhotocardId}
         onSelect={selectCardChoice}
         disabled={!selectedMember || !selectedRelease}
@@ -479,53 +531,29 @@ export function CardForm({
         />
       ) : null}
 
-      {selectedPhotocard || selectedPendingPhotocard ? (
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
-          <p className="font-medium text-slate-950">
-            선택한 카드: {selectedPhotocard?.name ?? selectedPendingPhotocard?.card_description}
-          </p>
-          <p className="mt-1 text-slate-600">
-            {selectedPhotocard
-              ? compactParts([
-                  selectedGroup?.name,
-                  selectedMember?.name,
-                  selectedRelease?.title,
-                  selectedRelease ? sourceTypeLabel(selectedRelease.source_type) : null,
-                  selectedPhotocard.version
-                ])
-              : compactParts([
-                  selectedPendingPhotocard?.group_name ?? selectedGroup?.name,
-                  selectedPendingPhotocard?.member_name ?? selectedMember?.name,
-                  selectedPendingPhotocard?.source_title,
-                  selectedPendingPhotocard ? sourceTypeLabel(selectedPendingPhotocard.source_type) : null,
-                  selectedPendingPhotocard?.version
-                ])}
-          </p>
-          {selectedPendingPhotocard ? <Badge className="mt-2">카탈로그 승인 대기</Badge> : null}
-        </div>
-      ) : null}
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <label className="grid gap-1.5">
+          <span className="text-sm font-medium text-slate-700">{mode === "have" ? "상태 등급" : "최소 허용 등급"}</span>
+          <Select value={gradeId} onChange={(event) => setGradeId(event.target.value)}>
+            <option value="">등급 선택</option>
+            {grades.map((grade) => (
+              <option key={grade.id} value={grade.id}>
+                {grade.code} - {grade.label}
+              </option>
+            ))}
+          </Select>
+        </label>
 
-      <label className="grid gap-1.5">
-        <span className="text-sm font-medium text-slate-700">{mode === "have" ? "상태 등급" : "최소 허용 등급"}</span>
-        <Select value={gradeId} onChange={(event) => setGradeId(event.target.value)}>
-          <option value="">등급 선택</option>
-          {grades.map((grade) => (
-            <option key={grade.id} value={grade.id}>
-              {grade.code} - {grade.label}
-            </option>
-          ))}
-        </Select>
-      </label>
-
-      <label className="grid gap-1.5">
-        <span className="text-sm font-medium text-slate-700">{mode === "have" ? "메모 / 하자 태그" : "메모"}</span>
-        <Input
-          placeholder={mode === "have" ? "예: corner ding" : "선택 입력"}
-          value={note}
-          maxLength={500}
-          onChange={(event) => setNote(event.target.value)}
-        />
-      </label>
+        <label className="grid gap-1.5">
+          <span className="text-sm font-medium text-slate-700">{mode === "have" ? "메모 / 하자 태그" : "메모"}</span>
+          <Input
+            placeholder={mode === "have" ? "예: corner ding" : "선택 입력"}
+            value={note}
+            maxLength={500}
+            onChange={(event) => setNote(event.target.value)}
+          />
+        </label>
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button className="flex-1" disabled={!canSubmit}>
@@ -546,6 +574,7 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
   query,
   onQueryChange,
   choices,
+  selectedChoice,
   selectedId,
   onSelect,
   disabled,
@@ -555,53 +584,85 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
   query: string;
   onQueryChange: (value: string) => void;
   choices: T[];
+  selectedChoice?: T | null;
   selectedId: number | null;
   onSelect: (choice: T) => void;
   disabled?: boolean;
   emptyText: string;
 }) {
+  const [editing, setEditing] = useState(false);
   const visibleChoices = choices.slice(0, 20);
+  const showSummary = Boolean(selectedChoice && !editing && !query);
+
+  useEffect(() => {
+    if (!selectedId) setEditing(false);
+  }, [selectedId]);
 
   return (
     <section className={cn("grid gap-2", disabled && "opacity-60")}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        {selectedId ? <Badge>선택됨</Badge> : null}
+        {selectedChoice ? <Badge>선택됨</Badge> : null}
       </div>
-      <label className="relative">
-        <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
-        <Input
-          className="pl-9"
-          placeholder="검색"
-          value={query}
-          disabled={disabled}
-          onChange={(event) => onQueryChange(event.target.value)}
-        />
-      </label>
-      <div className="grid max-h-72 gap-2 overflow-y-auto rounded-md border border-slate-100 bg-slate-50 p-2">
-        {!disabled && visibleChoices.length ? (
-          visibleChoices.map((choice) => (
-            <button
-              type="button"
-              key={choice.item.id}
-              onClick={() => onSelect(choice)}
-              className={cn(
-                "rounded-md border bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50",
-                selectedId === choice.item.id ? "border-slate-900 ring-2 ring-slate-100" : "border-slate-200"
-              )}
-            >
-              <span className="block text-sm font-medium text-slate-950">{choice.title}</span>
-              {choice.subtitle ? <span className="mt-1 block text-xs text-slate-500">{choice.subtitle}</span> : null}
-              {choice.meta ? <span className="mt-2 inline-flex text-xs text-slate-600">{choice.meta}</span> : null}
-            </button>
-          ))
-        ) : (
-          <p className="px-2 py-3 text-sm text-slate-500">{emptyText}</p>
-        )}
-        {!disabled && choices.length > visibleChoices.length ? (
-          <p className="px-2 py-1 text-xs text-slate-500">검색어를 더 입력하면 결과를 좁힐 수 있습니다.</p>
-        ) : null}
-      </div>
+      {showSummary && selectedChoice ? (
+        <div className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-slate-950">{selectedChoice.title}</p>
+            <p className="truncate text-xs text-slate-500">
+              {compactParts([selectedChoice.subtitle, selectedChoice.meta]) || "선택 완료"}
+            </p>
+          </div>
+          <Button
+            className="h-8 shrink-0 px-3 text-xs"
+            type="button"
+            variant="secondary"
+            disabled={disabled}
+            onClick={() => setEditing(true)}
+          >
+            변경
+          </Button>
+        </div>
+      ) : (
+        <>
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
+            <Input
+              className="pl-9"
+              placeholder="검색"
+              value={query}
+              disabled={disabled}
+              onChange={(event) => onQueryChange(event.target.value)}
+            />
+          </label>
+          <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border border-slate-100 bg-slate-50 p-2">
+            {!disabled && visibleChoices.length ? (
+              visibleChoices.map((choice) => (
+                <button
+                  type="button"
+                  key={choice.item.id}
+                  onClick={() => {
+                    onSelect(choice);
+                    setEditing(false);
+                  }}
+                  className={cn(
+                    "rounded-md border bg-white p-2.5 text-left transition hover:border-slate-300 hover:bg-slate-50",
+                    selectedId === choice.item.id ? "border-slate-900 ring-2 ring-slate-100" : "border-slate-200"
+                  )}
+                >
+                  <span className="block truncate text-sm font-medium text-slate-950">{choice.title}</span>
+                  {choice.subtitle ? <span className="mt-1 block truncate text-xs text-slate-500">{choice.subtitle}</span> : null}
+                  {choice.meta ? <span className="mt-1 inline-flex text-xs text-slate-600">{choice.meta}</span> : null}
+                </button>
+              ))
+            ) : (
+              <p className="px-2 py-3 text-sm text-slate-500">{emptyText}</p>
+            )}
+            {!disabled && choices.length > visibleChoices.length ? (
+              <p className="px-2 py-1 text-xs text-slate-500">검색어를 더 입력하면 결과를 좁힐 수 있습니다.</p>
+            ) : null}
+          </div>
+        </>
+      )}
     </section>
   );
 }
