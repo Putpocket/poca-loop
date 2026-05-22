@@ -81,6 +81,7 @@ export function ExplorePage() {
 
   function clearFilters() {
     setFilters({ limit: 50 });
+    setQueries({ group: "", member: "", release: "", sourceType: "", photocard: "" });
   }
 
   return (
@@ -96,31 +97,41 @@ export function ExplorePage() {
 
       <Card>
         <CardContent className="grid gap-4">
-          <div className="inline-flex w-fit rounded-full bg-slate-100 p-1">
-            <Button
-              variant={filters.entry_type === undefined ? "primary" : "ghost"}
-              className="h-8 rounded-full px-4"
-              onClick={() => patchFilters({ entry_type: undefined })}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex w-fit rounded-full bg-slate-100 p-1">
+              <Button
+                variant={filters.entry_type === undefined ? "primary" : "ghost"}
+                className="h-8 rounded-full px-4"
+                onClick={() => patchFilters({ entry_type: undefined })}
+              >
+                전체
+              </Button>
+              <Button
+                variant={filters.entry_type === "have" ? "primary" : "ghost"}
+                className="h-8 rounded-full px-4"
+                onClick={() => patchFilters({ entry_type: "have" })}
+              >
+                Have
+              </Button>
+              <Button
+                variant={filters.entry_type === "want" ? "primary" : "ghost"}
+                className="h-8 rounded-full px-4"
+                onClick={() => patchFilters({ entry_type: "want" })}
+              >
+                Want
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+              onClick={() => setShowAdvanced((value) => !value)}
             >
-              전체
-            </Button>
-            <Button
-              variant={filters.entry_type === "have" ? "primary" : "ghost"}
-              className="h-8 rounded-full px-4"
-              onClick={() => patchFilters({ entry_type: "have" })}
-            >
-              Have
-            </Button>
-            <Button
-              variant={filters.entry_type === "want" ? "primary" : "ghost"}
-              className="h-8 rounded-full px-4"
-              onClick={() => patchFilters({ entry_type: "want" })}
-            >
-              Want
-            </Button>
+              <SlidersHorizontal size={15} />
+              {showAdvanced ? "상세 필터 접기" : "상세 필터"}
+            </button>
           </div>
 
-          <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <div className="grid gap-4 rounded-md border border-slate-200 bg-slate-50 p-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <ChoiceFilter
                 label="그룹"
@@ -154,15 +165,6 @@ export function ExplorePage() {
                 onClear={() => patchFilters({ member_id: undefined, photocard_id: undefined })}
               />
             </div>
-
-            <button
-              type="button"
-              className="inline-flex w-fit items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-950"
-              onClick={() => setShowAdvanced((value) => !value)}
-            >
-              <SlidersHorizontal size={15} />
-              {showAdvanced ? "상세 필터 접기" : "상세 필터"}
-            </button>
 
             {showAdvanced ? (
               <div className="grid gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -202,24 +204,26 @@ export function ExplorePage() {
                 <SegmentedLimit value={filters.limit ?? 50} onChange={(limit) => patchFilters({ limit })} />
               </div>
             ) : null}
-          </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button onClick={() => void query.refetch()} disabled={query.isFetching}>
-              <Search size={16} />
-              다시 조회
-            </Button>
-            <Button variant="ghost" onClick={clearFilters}>
-              <RotateCcw size={16} />
-              필터 초기화
-            </Button>
-            <Link
-              to="/matches/direct"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-950 transition hover:bg-slate-50"
-            >
-              <ArrowRightLeft size={16} />
-              내 매칭 보기
-            </Link>
+            <div className="flex flex-col gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button onClick={() => void query.refetch()} disabled={query.isFetching}>
+                  <Search size={16} />
+                  다시 조회
+                </Button>
+                <Button variant="ghost" onClick={clearFilters}>
+                  <RotateCcw size={16} />
+                  필터 초기화
+                </Button>
+              </div>
+              <Link
+                to="/matches/direct"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-950 transition hover:bg-slate-50"
+              >
+                <ArrowRightLeft size={16} />
+                내 매칭 보기
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
