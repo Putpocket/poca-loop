@@ -1,7 +1,7 @@
 import type { Release } from "./api";
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
-  album: "릴리즈",
+  album: "앨범 포카",
   preorder_benefit: "POB",
   store_benefit: "스토어 특전",
   lucky_draw: "럭드",

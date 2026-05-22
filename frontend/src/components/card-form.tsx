@@ -703,7 +703,7 @@ function PendingPhotocardForm({
         <Input placeholder="그룹" value={draft.group} onChange={(event) => onChange("group", event.target.value)} />
         <Input placeholder="멤버" value={draft.member} onChange={(event) => onChange("member", event.target.value)} />
         <Select value={draft.source_type} onChange={(event) => onChange("source_type", event.target.value)}>
-          <option value="album">릴리즈</option>
+          <option value="album">앨범 포카</option>
           <option value="preorder_benefit">POB</option>
           <option value="store_benefit">스토어 특전</option>
           <option value="lucky_draw">럭드</option>

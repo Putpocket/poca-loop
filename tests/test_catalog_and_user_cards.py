@@ -223,19 +223,15 @@ def test_catalog_lists_seeded_nmixx_members_and_releases_in_display_order(client
         for release in client.get("/api/v1/catalog/releases").json()
         if release["group_id"] == db.scalar(select(Group).where(Group.slug == "nmixx")).id
     ]
-    assert [release["title"] for release in releases[:9]] == [
-        "AD MARE",
-        "AD MARE",
-        "ENTWURF",
-        "ENTWURF",
-        "ENTWURF",
-        "expergo",
-        "expergo",
-        "expergo",
-        "expergo",
-    ]
-    assert releases[5]["detail"] is None
-    assert releases[6]["detail"] == "Digipack"
+    released_dates = [release["released_on"] for release in releases]
+    assert released_dates == sorted(released_dates)
+    assert releases[0]["title"] == "AD MARE"
+    expergo_releases = [release for release in releases if release["title"] == "expergo"]
+    assert expergo_releases[0]["detail"] is None
+    assert expergo_releases[1]["detail"] == "Digipack"
+    assert any(release["source_type"] == "concert" for release in releases)
+    assert any(release["source_type"] == "fanclub" for release in releases)
+    assert any(release["source_type"] == "season_greeting" for release in releases)
     assert releases[-1]["title"] == "Heavy Serenade"
 
 

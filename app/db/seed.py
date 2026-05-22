@@ -32,6 +32,8 @@ NMIXX_RELEASE_SOURCES = [
                 "Blind Package Photocard",
                 "블라인드 패키지 특전 포토카드",
             ),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
+            ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
         ],
     },
     {
@@ -40,7 +42,26 @@ NMIXX_RELEASE_SOURCES = [
         "sources": [
             ("album", None, "Album Photocard", "정규 앨범 랜덤 포토카드"),
             ("preorder_benefit", "Pre-order Benefit", "POB Photocard", "예약판매 특전 포토카드"),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
+            ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "Funky Glitter Christmas",
+        "released_on": "2022-11-23",
+        "sources": [
+            ("event", "Intermixxion Single Event", "Event Photocard", "디지털 싱글 이벤트 포토카드"),
+            ("store_benefit", "Makestar / Retail Event", "Retail Benefit Photocard", "판매처 이벤트 특전 포토카드"),
+            ("fansign", "Video Call Event", "Video Call Photocard", "영상통화 이벤트 포토카드"),
+        ],
+    },
+    {
+        "title": "NSWER 1st Generation",
+        "released_on": "2023-02-20",
+        "sources": [
+            ("fanclub", "Official Fanclub Kit", "Fanclub Kit Photocard", "공식 팬클럽 키트 포토카드"),
+            ("fanclub", "Membership Benefit", "Membership Benefit Photocard", "팬클럽 가입/멤버십 특전 포토카드"),
         ],
     },
     {
@@ -50,8 +71,11 @@ NMIXX_RELEASE_SOURCES = [
             ("album", None, "Album Photocard", "정규 앨범 랜덤 포토카드"),
             ("album", "Digipack", "Digipack Photocard", "디지팩 버전 포토카드"),
             ("preorder_benefit", "Pre-order Benefit", "POB Photocard", "예약판매 특전 포토카드"),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
             ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
+            ("popup", "Soundwave Pop-up Store", "Pop-up Store Photocard", "팝업스토어 이벤트 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+            ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
         ],
     },
     {
@@ -62,8 +86,46 @@ NMIXX_RELEASE_SOURCES = [
             ("album", "Polaroid Card", "Polaroid Card", "앨범 동봉 폴라로이드 카드"),
             ("album", "Digipack", "Digipack Photocard", "디지팩 버전 포토카드"),
             ("preorder_benefit", "Pre-order Benefit", "POB Photocard", "예약판매 특전 포토카드"),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
             ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
+            ("popup", "Pop-up Store", "Pop-up Store Photocard", "팝업스토어 이벤트 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+            ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "NICE TO MIXX YOU",
+        "released_on": "2023-10-04",
+        "sources": [
+            ("concert", "Showcase Tour MD", "Tour MD Photocard", "쇼케이스 투어 MD 포토카드"),
+            ("concert", "VIP / Venue Benefit", "Venue Benefit Photocard", "공연장/VIP 특전 포토카드"),
+            ("merch", "Tin Case Photocard Set", "Tin Case Photocard Set", "틴케이스 포토카드 세트"),
+        ],
+    },
+    {
+        "title": "NMIXX CHANGE UP: MIXX UNIVERSITY",
+        "released_on": "2023-10-07",
+        "sources": [
+            ("fanmeeting", "Fan Concert MD", "Fan Concert MD Photocard", "팬콘서트 MD 포토카드"),
+            ("fanmeeting", "Venue Benefit", "Venue Benefit Photocard", "공연장 특전 포토카드"),
+            ("merch", "Tin Case Photocard Set", "Tin Case Photocard Set", "틴케이스 포토카드 세트"),
+            ("merch", "Trading Card", "Trading Card", "트레이딩 카드"),
+        ],
+    },
+    {
+        "title": "2024 Season's Greetings",
+        "released_on": "2023-12-01",
+        "sources": [
+            ("season_greeting", "Season's Greetings", "Season's Greetings Photocard", "시즌그리팅 포토카드"),
+            ("season_greeting", "Pre-order Benefit", "Season's Greetings POB", "시즌그리팅 예약 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "Soñar (Breaker)",
+        "released_on": "2023-12-04",
+        "sources": [
+            ("event", "Pre-release Single Event", "Event Photocard", "선공개 싱글 이벤트 포토카드"),
+            ("store_benefit", "Retailer Event", "Retail Benefit Photocard", "판매처 이벤트 특전 포토카드"),
         ],
     },
     {
@@ -86,7 +148,34 @@ NMIXX_RELEASE_SOURCES = [
             ),
             ("popup", "Counting Stars / Pop-up Store", "Pop-up Benefit Photocard", "팝업/이벤트 특전 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+            ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
             ("store_benefit", "Target / Retail Exclusive", "Retail Exclusive Photocard", "해외/리테일러 독점 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "NSWER 2nd Generation",
+        "released_on": "2024-02-01",
+        "sources": [
+            ("fanclub", "Official Fanclub Kit", "Fanclub Kit Photocard", "공식 팬클럽 키트 포토카드"),
+            ("fanclub", "Membership Benefit", "Membership Benefit Photocard", "팬클럽 가입/멤버십 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "NMIXX Official Light Stick",
+        "released_on": "2024-05-01",
+        "sources": [
+            ("merch", "Light Stick Purchase Benefit", "Light Stick Benefit Photocard", "공식 응원봉 구매 특전 포토카드"),
+            ("store_benefit", "Retailer Light Stick Benefit", "Retail Benefit Photocard", "응원봉 판매처 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "NMIXX CHANGE UP: MIXX LAB",
+        "released_on": "2024-05-04",
+        "sources": [
+            ("fanmeeting", "Fan Concert MD", "Fan Concert MD Photocard", "팬콘서트 MD 포토카드"),
+            ("fanmeeting", "Venue Benefit", "Venue Benefit Photocard", "공연장 특전 포토카드"),
+            ("merch", "Trading Card", "Trading Card", "트레이딩 카드"),
+            ("merch", "Tin Case Photocard Set", "Tin Case Photocard Set", "틴케이스 포토카드 세트"),
         ],
     },
     {
@@ -107,8 +196,18 @@ NMIXX_RELEASE_SOURCES = [
                 "Lucky Draw Photocard",
                 "럭키드로우 포토카드",
             ),
+            ("popup", "Fe3O4: STICK OUT Pop-up Store", "Pop-up Store Photocard", "팝업스토어 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
             ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
+            ("merch", "Pop-up Tin Case Photocard Set", "Tin Case Photocard Set", "팝업 MD 틴케이스 포토카드 세트"),
+        ],
+    },
+    {
+        "title": "2025 Season's Greetings",
+        "released_on": "2024-12-01",
+        "sources": [
+            ("season_greeting", "Season's Greetings", "Season's Greetings Photocard", "시즌그리팅 포토카드"),
+            ("season_greeting", "Pre-order Benefit", "Season's Greetings POB", "시즌그리팅 예약 특전 포토카드"),
         ],
     },
     {
@@ -118,9 +217,27 @@ NMIXX_RELEASE_SOURCES = [
             ("album", None, "Album Photocard", "정규 앨범 랜덤 포토카드"),
             ("album", "Platform / POCA", "Platform Photocard", "플랫폼/포카앨범 포토카드"),
             ("preorder_benefit", "Pre-order Benefit", "POB Photocard", "예약판매 특전 포토카드"),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
             ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
+            ("popup", "Fe3O4: FORWARD Pop-up Store", "Pop-up Store Photocard", "팝업스토어 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
             ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "NSWER 3rd Generation",
+        "released_on": "2025-04-01",
+        "sources": [
+            ("fanclub", "Official Fanclub Kit", "Fanclub Kit Photocard", "공식 팬클럽 키트 포토카드"),
+            ("fanclub", "Membership Benefit", "Membership Benefit Photocard", "팬클럽 가입/멤버십 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "MIXXPEDIA",
+        "released_on": "2025-07-01",
+        "sources": [
+            ("merch", "Photobook / MD", "Photobook Photocard", "포토북/MD 포토카드"),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
         ],
     },
     {
@@ -135,8 +252,24 @@ NMIXX_RELEASE_SOURCES = [
                 "POB Photocard",
                 "예약판매 특전 포토카드",
             ),
+            ("store_benefit", "Retailer Benefit", "Retail Benefit Photocard", "판매처 특전 포토카드"),
             ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
+            ("popup", "inside the heart Pop-up MD", "Pop-up MD Photocard", "팝업스토어 MD 포토카드"),
+            ("popup", "IFC Mall Pop-up Store", "Pop-up Store Photocard", "팝업스토어 특전 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+            ("magazine", "Magazine / Press Benefit", "Magazine Photocard", "잡지/화보 특전 포토카드"),
+        ],
+    },
+    {
+        "title": "EPISODE 1: ZERO FRONTIER",
+        "released_on": "2025-11-28",
+        "sources": [
+            ("concert", "World Tour VIP / Venue Benefit", "Tour Benefit Photocard", "월드투어 VIP/공연장 특전 포토카드"),
+            ("popup", "World Tour Pop-up Store", "Pop-up Store Photocard", "월드투어 팝업스토어 포토카드"),
+            ("popup", "Pop-up Purchase Benefit", "Purchase Benefit Photocard", "팝업 구매 금액대별 특전 포토카드"),
+            ("merch", "Trading Card", "Trading Card", "트레이딩 카드"),
+            ("merch", "Photocard Pack", "Photocard Pack", "포토카드 팩"),
+            ("merch", "Photocard Holder Benefit", "Holder Benefit Photocard", "포토카드 홀더/MD 특전 포토카드"),
         ],
     },
     {
@@ -149,7 +282,11 @@ NMIXX_RELEASE_SOURCES = [
             ("album", "Melody Box", "Melody Box Photocard Set", "멜로디 박스 포토카드 세트"),
             ("preorder_benefit", "Pre-order Benefit", "POB Photocard", "예약판매 특전 포토카드"),
             ("lucky_draw", "Lucky Draw", "Lucky Draw Photocard", "럭키드로우 포토카드"),
+            ("store_benefit", "Target / Barnes & Noble / Retail Exclusive", "Retail Exclusive Photocard", "해외/리테일러 독점 특전 포토카드"),
             ("fansign", "Fansign / Video Call", "Fansign Photocard", "팬사인회/영상통화 특전 포토카드"),
+            ("broadcast", "Music Broadcast", "Broadcast Photocard", "음악방송 참여 특전 포토카드"),
+            ("popup", "Heavy Serenade Pop-up Store", "Pop-up Store Photocard", "팝업스토어 포토카드"),
+            ("merch", "Official MD / Trading Card", "Official MD Photocard", "공식 MD/트레이딩 카드"),
         ],
     },
 ]
@@ -236,6 +373,7 @@ def sync_nmixx_catalog(db: Session) -> None:
     group = get_or_create(db, Group, name="NMIXX", defaults={"slug": "nmixx"})
     group.slug = "nmixx"
     members = sync_nmixx_members(db, group)
+    release_dates = {source["title"]: date.fromisoformat(source["released_on"]) for source in NMIXX_RELEASE_SOURCES}
 
     for source in NMIXX_RELEASE_SOURCES:
         for source_type, detail, card_name, card_notes in source["sources"]:
@@ -263,6 +401,10 @@ def sync_nmixx_catalog(db: Session) -> None:
                     )
                 else:
                     card.notes = card_notes
+
+    for release in db.scalars(select(Release).where(Release.group_id == group.id)).all():
+        if release.title in release_dates and release.released_on is None:
+            release.released_on = release_dates[release.title]
 
 
 def seed_default_data(db: Session) -> None:
