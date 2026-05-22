@@ -594,6 +594,7 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
   const [focused, setFocused] = useState(false);
   const visibleChoices = choices.slice(0, 20);
   const showChoices = !disabled && (editing || focused || Boolean(query));
+  const inputValue = editing || focused ? query : selectedChoice?.title ?? query;
 
   useEffect(() => {
     if (!selectedId) setEditing(false);
@@ -610,15 +611,19 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
           <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
           <Input
             className="pl-9"
-            placeholder={selectedChoice ? "변경하려면 검색" : "검색"}
-            value={query}
+            placeholder={disabled ? "이전 단계 필요" : selectedChoice ? "선택됨 · 다시 검색" : "검색"}
+            value={inputValue}
             disabled={disabled}
             onFocus={() => {
               setFocused(true);
               setEditing(true);
+              onQueryChange("");
             }}
             onBlur={() => {
-              window.setTimeout(() => setFocused(false), 120);
+              window.setTimeout(() => {
+                setFocused(false);
+                if (!query) setEditing(false);
+              }, 120);
             }}
             onChange={(event) => {
               setEditing(true);
@@ -657,30 +662,6 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
             ) : null}
           </div>
         ) : null}
-      </div>
-      <div className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-        {selectedChoice ? (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-950">{selectedChoice.title}</p>
-            <p className="truncate text-xs text-slate-500">
-              {compactParts([selectedChoice.subtitle, selectedChoice.meta]) || "선택 완료"}
-            </p>
-          </div>
-        ) : (
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-500">{disabled ? "이전 단계 필요" : "선택 대기"}</p>
-            <p className="text-xs text-slate-400">{disabled ? emptyText : "검색해서 항목을 선택하세요."}</p>
-          </div>
-        )}
-        <Button
-          className="h-8 shrink-0 px-3 text-xs"
-          type="button"
-          variant="secondary"
-          disabled={disabled}
-          onClick={() => setEditing(true)}
-        >
-          {selectedChoice ? "변경" : "검색"}
-        </Button>
       </div>
     </section>
   );
