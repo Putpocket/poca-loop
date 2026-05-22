@@ -49,10 +49,10 @@ Password: demo-password-change-me
 
 기본 seed는 아래 카탈로그 메타데이터를 만듭니다.
 
-- Group: `NewJeans`
-- Member: `Minji`
-- Release: `Get Up`
-- Photocard: `Bunny Beach`, version `Sample`
+- Group: `NMIXX`
+- Member: `Haewon`
+- Release: `Fe3O4: BREAK`
+- Photocard: `Dash`, version `Sample`
 - Condition grades: `S`, `A`, `B`, `C`, `D`
 
 관리자 카탈로그 UI는 아직 없으므로, 일반 UI의 보유/원함 등록은 기존 카탈로그 ID를 입력하는 MVP 형태입니다.

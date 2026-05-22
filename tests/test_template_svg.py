@@ -108,6 +108,20 @@ def test_template_svg_does_not_expose_sensitive_user_fields(client, admin_header
     assert "is_active" not in svg
 
 
+def test_template_svg_height_contains_empty_have_and_want_sections(client, admin_headers):
+    user = login_named_user(client, "empty-svg@example.com", "empty_svg")
+
+    response = client.get("/templates/me.svg", headers=user)
+
+    assert response.status_code == 200
+    svg = response.text
+    assert 'height="310"' in svg
+    assert 'viewBox="0 0 980 310"' in svg
+    assert 'height="274"' in svg
+    assert "No have cards yet" in svg
+    assert "No want cards yet" in svg
+
+
 def test_template_svg_escapes_special_characters_and_avoids_active_content(client, admin_headers):
     card, grade = create_svg_catalog(
         client,

@@ -97,9 +97,20 @@ def render_svg_checklist(db: Session, user: User) -> str:
     have_more = len(haves) > MAX_HAVES
     want_more = len(wants) > MAX_WANTS
 
-    have_rows = len(shown_haves) + (1 if have_more else 0)
-    want_rows = len(shown_wants) + (1 if want_more else 0)
-    height = 160 + (have_rows + want_rows) * ROW_HEIGHT + SECTION_GAP
+    have_rows = max(1, len(shown_haves)) + (1 if have_more else 0)
+    want_rows = max(1, len(shown_wants)) + (1 if want_more else 0)
+    header_height = 126
+    section_title_height = 28
+    bottom_padding = 34
+    height = (
+        header_height
+        + section_title_height
+        + have_rows * ROW_HEIGHT
+        + SECTION_GAP
+        + section_title_height
+        + want_rows * ROW_HEIGHT
+        + bottom_padding
+    )
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{height}" '

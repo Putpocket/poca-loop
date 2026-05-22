@@ -53,13 +53,13 @@ def seed_default_data(db: Session) -> None:
                 )
             )
 
-    group = get_or_create(db, Group, name="NewJeans", defaults={"slug": "newjeans"})
-    member = get_or_create(db, Member, group_id=group.id, name="Minji")
+    group = get_or_create(db, Group, name="NMIXX", defaults={"slug": "nmixx"})
+    member = get_or_create(db, Member, group_id=group.id, name="Haewon")
     release = get_or_create(
         db,
         Release,
         group_id=group.id,
-        title="Get Up",
+        title="Fe3O4: BREAK",
         source_type="album",
         retailer_or_event=None,
         venue=None,
@@ -77,7 +77,7 @@ def seed_default_data(db: Session) -> None:
             Photocard.group_id == group.id,
             Photocard.member_id == member.id,
             Photocard.release_id == release.id,
-            Photocard.name == "Bunny Beach",
+            Photocard.name == "Dash",
             Photocard.version == "Sample",
         )
     )
@@ -87,7 +87,7 @@ def seed_default_data(db: Session) -> None:
                 group_id=group.id,
                 member_id=member.id,
                 release_id=release.id,
-                name="Bunny Beach",
+                name="Dash",
                 version="Sample",
                 external_url="https://example.com/poca-loop/sample-card",
                 notes="Sample metadata only; no copyrighted image is stored.",
