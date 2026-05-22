@@ -2,7 +2,7 @@ from typing import Annotated, TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import Session
 
@@ -46,10 +46,50 @@ RELEASE_IDENTITY_FIELDS = (
     "start_date",
     "end_date",
 )
+NMIXX_MEMBER_ORDER = {
+    "릴리": 10,
+    "해원": 20,
+    "설윤": 30,
+    "배이": 40,
+    "지우": 50,
+    "규진": 60,
+}
+SOURCE_TYPE_ORDER = {
+    "album": 10,
+    "preorder_benefit": 20,
+    "store_benefit": 30,
+    "lucky_draw": 40,
+    "fansign": 50,
+    "broadcast": 60,
+    "popup": 70,
+    "concert": 80,
+    "fanmeeting": 90,
+    "merch": 100,
+    "season_greeting": 110,
+    "fanclub": 120,
+    "collab": 130,
+    "magazine": 140,
+    "event": 150,
+    "other": 160,
+}
 
 
 def list_items(db: Session, model: type[ModelT]) -> list[ModelT]:
     return list(db.scalars(select(model).order_by(model.id)).all())
+
+
+def member_sort_order():
+    return case(
+        *[(Member.name == name, order) for name, order in NMIXX_MEMBER_ORDER.items()],
+        else_=1000,
+    )
+
+
+def source_type_sort_order():
+    return case(
+        *[(Release.source_type == source_type, order) for source_type, order in SOURCE_TYPE_ORDER.items()],
+        else_=1000,
+    )
 
 
 def get_item_or_404(db: Session, model: type[ModelT], item_id: int) -> ModelT:
@@ -145,7 +185,9 @@ def groups_delete(item_id: int, db: DbDep, _admin: AdminDep) -> None:
 
 @router.get("/members", response_model=list[MemberRead])
 def members_list(db: DbDep) -> list[Member]:
-    return list_items(db, Member)
+    return list(
+        db.scalars(select(Member).order_by(Member.group_id, member_sort_order(), Member.name, Member.id)).all()
+    )
 
 
 @router.post("/members", response_model=MemberRead, status_code=status.HTTP_201_CREATED)
@@ -172,7 +214,20 @@ def members_delete(item_id: int, db: DbDep, _admin: AdminDep) -> None:
 
 @router.get("/releases", response_model=list[ReleaseRead])
 def releases_list(db: DbDep) -> list[Release]:
-    return list_items(db, Release)
+    return list(
+        db.scalars(
+            select(Release).order_by(
+                Release.group_id,
+                Release.released_on.is_(None),
+                Release.released_on,
+                Release.title,
+                source_type_sort_order(),
+                Release.detail.is_not(None),
+                Release.detail,
+                Release.id,
+            )
+        ).all()
+    )
 
 
 @router.post("/releases", response_model=ReleaseRead, status_code=status.HTTP_201_CREATED)

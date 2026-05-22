@@ -212,6 +212,33 @@ def test_seed_creates_korean_nmixx_catalog_idempotently(client, db):
     assert sorted(card.version for card in heavy_cards) == ["규진", "릴리", "배이", "설윤", "지우", "해원"]
 
 
+def test_catalog_lists_seeded_nmixx_members_and_releases_in_display_order(client, db):
+    seed_default_data(db)
+
+    members = [member["name"] for member in client.get("/api/v1/catalog/members").json()]
+    assert members[:6] == ["릴리", "해원", "설윤", "배이", "지우", "규진"]
+
+    releases = [
+        release
+        for release in client.get("/api/v1/catalog/releases").json()
+        if release["group_id"] == db.scalar(select(Group).where(Group.slug == "nmixx")).id
+    ]
+    assert [release["title"] for release in releases[:9]] == [
+        "AD MARE",
+        "AD MARE",
+        "ENTWURF",
+        "ENTWURF",
+        "ENTWURF",
+        "expergo",
+        "expergo",
+        "expergo",
+        "expergo",
+    ]
+    assert releases[5]["detail"] is None
+    assert releases[6]["detail"] == "Digipack"
+    assert releases[-1]["title"] == "Heavy Serenade"
+
+
 def test_duplicate_have_and_want_return_409(client, admin_headers):
     card, grade = seed_catalog(client, admin_headers)
     user_headers = login_user(client)
