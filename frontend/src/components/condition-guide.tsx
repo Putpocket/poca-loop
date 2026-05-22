@@ -14,14 +14,16 @@ export function ConditionGuide({ compact = false }: { compact?: boolean }) {
     return (
       <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
         <p className="text-sm font-medium text-slate-900">상태 등급</p>
-        <div className="flex flex-wrap gap-2">
-          {conditionGuide.map((item) => (
+        <div className="grid grid-cols-2 gap-2">
+          {conditionGuide.map((item, index) => (
             <div
               key={item.code}
-              className="flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2"
+              className={`flex h-10 min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 ${
+                index === conditionGuide.length - 1 ? "col-span-2" : ""
+              }`}
             >
               <Badge className="shrink-0">{item.code}</Badge>
-              <span className="whitespace-nowrap text-xs font-medium leading-4 text-slate-700">{item.short}</span>
+              <span className="truncate text-xs font-medium leading-4 text-slate-700">{item.short}</span>
             </div>
           ))}
         </div>
