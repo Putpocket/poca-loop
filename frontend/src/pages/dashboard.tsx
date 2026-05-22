@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, FileImage, HeartHandshake, ListChecks, Repeat2, Shuffle } from "lucide-react";
+import { ArrowRight, Download, FileImage, HeartHandshake, ListChecks, Repeat2, Shuffle } from "lucide-react";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/state-blocks";
@@ -74,7 +74,7 @@ export function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>공유용 체크리스트</CardTitle>
-          <CardDescription>공개 링크를 만들지 않고, 로그인한 내 목록을 이미지 파일로 저장합니다.</CardDescription>
+          <CardDescription>내 포카 목록을 SVG/PNG 이미지로 저장할 수 있어요.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
@@ -116,12 +116,14 @@ export function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Next steps</CardTitle>
-          <CardDescription>관리자 카탈로그 UI는 아직 없으므로, 등록은 기존 카탈로그 ID를 기준으로 합니다.</CardDescription>
+          <CardTitle>빠른 작업</CardTitle>
+          <CardDescription>자주 쓰는 화면으로 바로 이동합니다.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <LinkCard to="/haves" title="보유 카드 등록" description="내가 줄 수 있는 카드를 상태 등급과 함께 추가합니다." />
           <LinkCard to="/wants" title="원하는 카드 등록" description="받고 싶은 카드와 최소 허용 등급을 추가합니다." />
+          <LinkCard to="/explore" title="교환 탐색 보기" description="다른 사용자의 보유/원하는 카드 목록을 둘러봅니다." />
+          <LinkCard to="/matches/direct" title="매칭 확인하기" description="지금 가능한 1:1 교환 후보를 확인합니다." />
         </CardContent>
       </Card>
     </div>
@@ -237,9 +239,15 @@ function MetricCard({ icon: Icon, label, value, to }: { icon: ComponentType<{ si
 
 function LinkCard({ to, title, description }: { to: string; title: string; description: string }) {
   return (
-    <Link to={to} className="rounded-md border border-slate-200 p-4 transition hover:border-slate-300">
-      <p className="font-medium text-slate-950">{title}</p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+    <Link
+      to={to}
+      className="group flex items-start justify-between gap-3 rounded-md border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <span>
+        <span className="block font-medium text-slate-950">{title}</span>
+        <span className="mt-1 block text-sm text-slate-500">{description}</span>
+      </span>
+      <ArrowRight size={16} className="mt-1 shrink-0 text-slate-400 transition group-hover:text-slate-700" />
     </Link>
   );
 }

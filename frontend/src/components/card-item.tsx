@@ -35,7 +35,7 @@ export function HaveCardItem({
           <div>
             <p className="font-medium text-slate-950">{cardName}</p>
             <p className="text-sm text-slate-500">
-              {item.photocard ? `Photocard #${item.photocard.id}` : `임시 등록 #${item.pending_photocard?.id}`}
+              {item.photocard ? "정식 등록 포카" : "임시 등록 포카"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               릴리즈/출처: {releaseTitle}
@@ -100,7 +100,7 @@ export function WantCardItem({
           <div>
             <p className="font-medium text-slate-950">{cardName}</p>
             <p className="text-sm text-slate-500">
-              {item.photocard ? `Photocard #${item.photocard.id}` : `임시 등록 #${item.pending_photocard?.id}`}
+              {item.photocard ? "정식 등록 포카" : "임시 등록 포카"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               릴리즈/출처: {releaseTitle}

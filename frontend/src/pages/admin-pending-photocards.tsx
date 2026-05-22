@@ -251,14 +251,14 @@ function PendingPhotocardReviewCard({
         {isApproved ? (
           <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
             <p className="font-medium">승인됨</p>
-            <p className="mt-1">정식 Photocard #{item.approved_photocard_id}</p>
+            <p className="mt-1">정식 포카 #{item.approved_photocard_id}</p>
             {item.review_reason ? <p className="mt-1">사유: {item.review_reason}</p> : null}
           </div>
         ) : null}
         {isMerged ? (
           <div className="rounded-md bg-sky-50 p-3 text-sm text-sky-800">
             <p className="font-medium">병합됨</p>
-            <p className="mt-1">정식 Photocard #{item.merged_photocard_id}</p>
+            <p className="mt-1">정식 포카 #{item.merged_photocard_id}</p>
             {item.review_reason ? <p className="mt-1">사유: {item.review_reason}</p> : null}
             {item.reviewed_at ? <p className="mt-1 text-xs">처리일: {formatDate(item.reviewed_at)}</p> : null}
           </div>
