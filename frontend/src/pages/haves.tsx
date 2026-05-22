@@ -57,7 +57,7 @@ export function HavesPage() {
   });
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(380px,420px)_minmax(520px,1fr)] xl:grid-cols-[minmax(400px,430px)_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(380px,410px)_minmax(0,1fr)] xl:grid-cols-[minmax(400px,420px)_minmax(0,1fr)]">
       <Card className="w-full">
         <CardHeader>
           <CardTitle>{editing ? "보유 카드 수정" : "보유 카드 추가"}</CardTitle>
@@ -92,7 +92,7 @@ export function HavesPage() {
         </CardContent>
       </Card>
 
-      <Card className="min-w-0 self-start lg:min-h-[460px]">
+      <Card className="min-w-0 self-start lg:min-h-[420px]">
         <CardHeader>
           <CardTitle>내 보유 카드</CardTitle>
           <CardDescription>교환에 내놓을 수 있는 카드입니다.</CardDescription>

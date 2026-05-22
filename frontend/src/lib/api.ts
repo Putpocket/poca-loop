@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { clearToken, getToken } from "./auth";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -186,6 +186,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       }
     } catch {
       message = response.statusText || message;
+    }
+    if (response.status === 401 && !path.startsWith("/api/v1/auth/login") && !path.startsWith("/api/v1/auth/signup")) {
+      clearToken();
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     throw new ApiError(message, response.status);
   }

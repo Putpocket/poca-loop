@@ -34,7 +34,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-slate-950">
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-950 text-sm text-white">
               PL
@@ -54,7 +54,7 @@ export function AppLayout() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
         <aside className={cn("md:block", open ? "block" : "hidden")}>
           <nav className="grid gap-1 rounded-lg border border-slate-200 bg-white p-2">
             {navItems.map((item) => (
