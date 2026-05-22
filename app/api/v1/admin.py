@@ -35,12 +35,17 @@ class PendingPhotocardApproveRequest(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 
 
+class PendingPhotocardMergeRequest(BaseModel):
+    photocard_id: int
+    reason: str | None = Field(default=None, max_length=500)
+
+
 @router.get("/pending-photocards", response_model=list[PendingPhotocardRead])
 def pending_photocards_review_list(
     db: DbDep,
     _admin: AdminDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
-    catalog_status: Literal["pending", "rejected", "approved"] | None = None,
+    catalog_status: Literal["pending", "rejected", "approved", "merged"] | None = None,
 ) -> list[PendingPhotocard]:
     query = select(PendingPhotocard).order_by(PendingPhotocard.created_at.desc(), PendingPhotocard.id.desc())
     if catalog_status is not None:
@@ -125,6 +130,8 @@ def pending_photocards_approve(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     if item.catalog_status == "rejected":
         raise conflict("Rejected pending photocard cannot be approved")
+    if item.catalog_status == "merged":
+        raise conflict("Merged pending photocard cannot be approved")
     if item.catalog_status == "approved":
         return item
 
@@ -167,6 +174,48 @@ def pending_photocards_approve(
     except IntegrityError:
         db.rollback()
         raise conflict("Photocard already exists") from None
+    except Exception:
+        db.rollback()
+        raise
+    db.refresh(item)
+    return item
+
+
+@router.post("/pending-photocards/{item_id}/merge", response_model=PendingPhotocardRead)
+def pending_photocards_merge(
+    item_id: int,
+    payload: PendingPhotocardMergeRequest,
+    db: DbDep,
+    admin: AdminDep,
+) -> PendingPhotocard:
+    item = db.get(PendingPhotocard, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if item.catalog_status == "rejected":
+        raise conflict("Rejected pending photocard cannot be merged")
+    if item.catalog_status == "approved":
+        raise conflict("Approved pending photocard cannot be merged")
+    if item.catalog_status == "merged":
+        return item
+
+    photocard = db.get(Photocard, payload.photocard_id)
+    if photocard is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target photocard not found")
+
+    try:
+        transfer_pending_card_references(db, item.id, photocard.id)
+        item.catalog_status = "merged"
+        item.merged_photocard_id = photocard.id
+        item.reviewed_by_admin_id = admin.id
+        item.reviewed_at = db.scalar(select(func.now()))
+        item.review_reason = payload.reason
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except IntegrityError:
+        db.rollback()
+        raise conflict("Pending photocard merge created duplicate user cards") from None
     except Exception:
         db.rollback()
         raise

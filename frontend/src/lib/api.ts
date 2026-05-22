@@ -49,8 +49,9 @@ export type PendingPhotocard = {
   card_description: string;
   version: string | null;
   memo: string | null;
-  catalog_status: "pending" | "rejected" | "approved";
+  catalog_status: "pending" | "rejected" | "approved" | "merged";
   approved_photocard_id: number | null;
+  merged_photocard_id: number | null;
   reviewed_by_admin_id: number | null;
   reviewed_at: string | null;
   review_reason: string | null;
@@ -207,6 +208,11 @@ export const api = {
     }
   ) =>
     request<PendingPhotocard>(`/api/v1/admin/pending-photocards/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  mergePendingPhotocard: (id: number, payload: { photocard_id: number; reason?: string | null }) =>
+    request<PendingPhotocard>(`/api/v1/admin/pending-photocards/${id}/merge`, {
       method: "POST",
       body: JSON.stringify(payload)
     }),

@@ -107,8 +107,12 @@ def test_admin_pending_photocards_status_filter_accepts_pending_only(client, adm
         "/api/v1/admin/pending-photocards?catalog_status=approved",
         headers=admin_headers,
     )
-    unsupported_response = client.get(
+    merged_response = client.get(
         "/api/v1/admin/pending-photocards?catalog_status=merged",
+        headers=admin_headers,
+    )
+    unsupported_response = client.get(
+        "/api/v1/admin/pending-photocards?catalog_status=archived",
         headers=admin_headers,
     )
 
@@ -118,6 +122,8 @@ def test_admin_pending_photocards_status_filter_accepts_pending_only(client, adm
     assert rejected_response.json() == []
     assert approved_response.status_code == 200
     assert approved_response.json() == []
+    assert merged_response.status_code == 200
+    assert merged_response.json() == []
     assert unsupported_response.status_code == 422
 
 
@@ -640,6 +646,446 @@ def test_approved_card_participates_in_three_way_matches(client, admin_headers):
         card_c["id"],
     }
     assert all("card_description" not in edge["card"] for edge in match["trade_edges"])
+
+
+def test_admin_can_merge_pending_photocard_into_existing_photocard(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-owner@example.com", "merge_owner")
+    pending = create_pending(client, user_headers, "merge me")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"], "reason": "same official card"},
+        headers=admin_headers,
+    )
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+    wants = client.get("/api/v1/me/cards/wants", headers=user_headers).json()
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["catalog_status"] == "merged"
+    assert data["merged_photocard_id"] == card["id"]
+    assert data["approved_photocard_id"] is None
+    assert data["review_reason"] == "same official card"
+    assert data["reviewed_by_admin_id"] is not None
+    assert data["reviewed_at"] is not None
+    assert len(haves) == 1
+    assert haves[0]["photocard_id"] == card["id"]
+    assert haves[0]["pending_photocard_id"] is None
+    assert haves[0]["pending_photocard"] is None
+    assert haves[0]["photocard"]["name"] == card["name"]
+    assert len(wants) == 1
+    assert wants[0]["photocard_id"] == card["id"]
+    assert wants[0]["pending_photocard_id"] is None
+    assert wants[0]["pending_photocard"] is None
+
+
+def test_merge_pending_photocard_requires_login_and_admin(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-user@example.com", "merge_user")
+    pending = create_pending(client, user_headers, "protected merge")
+
+    unauthenticated = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+    )
+    forbidden = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=user_headers,
+    )
+
+    assert unauthenticated.status_code == 401
+    assert forbidden.status_code == 403
+
+
+def test_merge_pending_photocard_returns_404_for_missing_ids(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-missing@example.com", "merge_missing")
+    pending = create_pending(client, user_headers, "missing target")
+
+    missing_pending = client.post(
+        "/api/v1/admin/pending-photocards/999999/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    missing_target = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": 999999},
+        headers=admin_headers,
+    )
+
+    assert missing_pending.status_code == 404
+    assert missing_target.status_code == 404
+
+
+def test_rejected_and_approved_pending_photocards_cannot_be_merged(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-terminal@example.com", "merge_terminal")
+    rejected = create_pending(client, user_headers, "rejected merge")
+    approved = create_pending(client, user_headers, "approved merge")
+    client.post(
+        f"/api/v1/admin/pending-photocards/{rejected['id']}/reject",
+        json={"reason": "not this one"},
+        headers=admin_headers,
+    )
+    client.post(
+        f"/api/v1/admin/pending-photocards/{approved['id']}/approve",
+        json=approval_payload(card, name="Already Approved For Merge Test"),
+        headers=admin_headers,
+    )
+
+    rejected_merge = client.post(
+        f"/api/v1/admin/pending-photocards/{rejected['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    approved_merge = client.post(
+        f"/api/v1/admin/pending-photocards/{approved['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+
+    assert rejected_merge.status_code == 409
+    assert approved_merge.status_code == 409
+
+
+def test_merged_pending_photocard_cannot_be_approved(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-then-approve@example.com", "merge_then_approve")
+    pending = create_pending(client, user_headers, "merge then approve")
+    client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/approve",
+        json=approval_payload(card, name="Should Not Approve Merged"),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 409
+
+
+def test_merged_remerge_policy_matches_readme(client, admin_headers):
+    card, _ = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-readme@example.com", "merge_readme")
+    pending = create_pending(client, user_headers, "readme merge policy")
+
+    first = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"], "reason": "first merge"},
+        headers=admin_headers,
+    )
+    second = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"], "reason": "ignored merge"},
+        headers=admin_headers,
+    )
+
+    with open("README.md", encoding="utf-8") as readme:
+        readme_text = readme.read()
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()["catalog_status"] == "merged"
+    assert second.json()["merged_photocard_id"] == first.json()["merged_photocard_id"]
+    assert second.json()["review_reason"] == "first merge"
+    assert "이미 병합된 항목에 다시 요청하면 기존 병합 결과를 200으로 반환합니다" in readme_text
+
+
+def test_merge_deletes_duplicate_pending_want(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-want-dup@example.com", "merge_want_dup")
+    pending = create_pending(client, user_headers, "duplicate merge want")
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    wants = client.get("/api/v1/me/cards/wants", headers=user_headers).json()
+
+    assert response.status_code == 200
+    assert len(wants) == 1
+    assert wants[0]["photocard_id"] == card["id"]
+    assert wants[0]["pending_photocard_id"] is None
+
+
+def test_merge_deletes_duplicate_pending_have_with_same_grade(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-have-dup@example.com", "merge_have_dup")
+    pending = create_pending(client, user_headers, "duplicate merge have")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+
+    assert response.status_code == 200
+    assert len(haves) == 1
+    assert haves[0]["photocard_id"] == card["id"]
+    assert haves[0]["pending_photocard_id"] is None
+
+
+def test_merge_keeps_have_with_different_grade(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    other_grade = client.post(
+        "/api/v1/catalog/condition-grades",
+        json={"code": "VG", "label": "Very Good", "sort_order": 20},
+        headers=admin_headers,
+    ).json()
+    user_headers = login_named_user(client, "merge-have-grade@example.com", "merge_have_grade")
+    pending = create_pending(client, user_headers, "different grade merge have")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": other_grade["id"]},
+        headers=user_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+
+    assert response.status_code == 200
+    assert len(haves) == 2
+    assert {have["photocard_id"] for have in haves} == {card["id"]}
+    assert {have["condition_grade"]["code"] for have in haves} == {"NM", "VG"}
+    assert all(have["pending_photocard_id"] is None for have in haves)
+
+
+def test_merge_keeps_transfer_atomic_when_reference_transfer_fails(
+    db, client, admin_headers, monkeypatch
+):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-rollback@example.com", "merge_rollback")
+    pending = create_pending(client, user_headers, "merge rollback")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"pending_photocard_id": pending["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    def fail_transfer(db, pending_id, photocard_id):
+        raise RuntimeError("simulated merge transfer failure")
+
+    monkeypatch.setattr(admin_api, "transfer_pending_card_references", fail_transfer)
+
+    with pytest.raises(RuntimeError):
+        client.post(
+            f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+            json={"photocard_id": card["id"]},
+            headers=admin_headers,
+        )
+
+    db.expire_all()
+    pending_row = db.get(PendingPhotocard, pending["id"])
+    have = db.scalar(select(UserHave).where(UserHave.pending_photocard_id == pending["id"]))
+    want = db.scalar(select(UserWant).where(UserWant.pending_photocard_id == pending["id"]))
+
+    assert pending_row.catalog_status == "pending"
+    assert pending_row.merged_photocard_id is None
+    assert have is not None
+    assert have.photocard_id is None
+    assert want is not None
+    assert want.photocard_id is None
+
+
+def test_merged_card_disappears_from_pending_badges_and_svg(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_headers = login_named_user(client, "merge-svg@example.com", "merge_svg")
+    pending = create_pending(client, user_headers, "svg before merge")
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_headers,
+    )
+
+    before_svg = client.get("/api/v1/templates/me.svg", headers=user_headers)
+    merge = client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    after_svg = client.get("/api/v1/templates/me.svg", headers=user_headers)
+    haves = client.get("/api/v1/me/cards/haves", headers=user_headers).json()
+
+    assert before_svg.status_code == 200
+    assert "[임시 등록]" in before_svg.text
+    assert merge.status_code == 200
+    assert haves[0]["pending_photocard"] is None
+    assert haves[0]["photocard"]["name"] == card["name"]
+    assert after_svg.status_code == 200
+    assert "[임시 등록]" not in after_svg.text
+    assert "Bunny Beach" in after_svg.text
+
+
+def test_merged_card_participates_in_direct_matches(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_a = login_named_user(client, "merge-direct-a@example.com", "merge_direct_a")
+    user_b = login_named_user(client, "merge-direct-b@example.com", "merge_direct_b")
+    pending = create_pending(client, user_a, "direct merged")
+    other_card = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Merge Direct Other Card",
+        },
+        headers=admin_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": other_card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": other_card["id"], "condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+
+    response = client.get("/api/v1/matches/direct", headers=user_a)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["user_a_gives"]["photocard"]["id"] == card["id"]
+
+
+def test_merged_card_participates_in_three_way_matches(client, admin_headers):
+    card, grade = seed_catalog(client, admin_headers)
+    user_a = login_named_user(client, "merge-three-a@example.com", "merge_three_a")
+    user_b = login_named_user(client, "merge-three-b@example.com", "merge_three_b")
+    user_c = login_named_user(client, "merge-three-c@example.com", "merge_three_c")
+    pending = create_pending(client, user_a, "three-way merged")
+    card_b = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Merge Three B Card",
+        },
+        headers=admin_headers,
+    ).json()
+    card_c = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Merge Three C Card",
+        },
+        headers=admin_headers,
+    ).json()
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"pending_photocard_id": pending["id"], "condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card_b["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_a,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card_b["id"], "condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card_c["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_b,
+    )
+    client.post(
+        "/api/v1/me/cards/haves",
+        json={"photocard_id": card_c["id"], "condition_grade_id": grade["id"]},
+        headers=user_c,
+    )
+    client.post(
+        f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
+        json={"photocard_id": card["id"]},
+        headers=admin_headers,
+    )
+    client.post(
+        "/api/v1/me/cards/wants",
+        json={"photocard_id": card["id"], "minimum_condition_grade_id": grade["id"]},
+        headers=user_c,
+    )
+
+    response = client.get("/api/v1/matches/three-way", headers=user_a)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert {edge["card"]["id"] for edge in response.json()[0]["trade_edges"]} == {
+        card["id"],
+        card_b["id"],
+        card_c["id"],
+    }
 
 
 def test_transfer_deletes_duplicate_pending_want(db, client, admin_headers):
