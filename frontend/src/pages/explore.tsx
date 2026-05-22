@@ -320,10 +320,10 @@ function ChoiceFilter({
     <section className="relative grid gap-2">
       <span className="text-xs font-medium text-slate-500">{label}</span>
       {selected ? (
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-slate-950">{selected.title}</span>
-            {selected.subtitle ? <span className="block truncate text-xs text-slate-500">{selected.subtitle}</span> : null}
+        <div className="flex h-11 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="truncate text-sm font-medium text-slate-950">{selected.title}</span>
+            {selected.subtitle ? <span className="truncate text-xs text-slate-500">{selected.subtitle}</span> : null}
           </span>
           <button
             type="button"

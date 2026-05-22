@@ -57,7 +57,7 @@ export function HavesPage() {
   });
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(400px,440px)_minmax(0,1fr)]">
       <Card className="w-full">
         <CardHeader>
           <CardTitle>{editing ? "보유 카드 수정" : "보유 카드 추가"}</CardTitle>
@@ -92,7 +92,7 @@ export function HavesPage() {
         </CardContent>
       </Card>
 
-      <Card className="min-w-0 self-start">
+      <Card className="min-w-0 self-start lg:min-h-[430px]">
         <CardHeader>
           <CardTitle>내 보유 카드</CardTitle>
           <CardDescription>교환에 내놓을 수 있는 카드입니다.</CardDescription>
@@ -101,7 +101,7 @@ export function HavesPage() {
           {haves.isLoading ? <LoadingState /> : null}
           {haves.isError ? <ErrorState message={getFriendlyError(haves.error)} /> : null}
           {haves.data?.length === 0 ? (
-            <div className="grid min-h-60 place-items-center gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+            <div className="grid min-h-72 place-items-center gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
               <EmptyState title="아직 보유 카드가 없어요." description="교환에 내놓을 카드를 추가해보세요." />
               <Button className="w-fit" type="button" variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 보유 카드 추가하기

@@ -2,7 +2,7 @@ import { Alert } from "./ui/alert";
 import { Badge } from "./ui/badge";
 
 export const conditionGuide = [
-  { code: "S", short: "미개봉/최상급", description: "미개봉 또는 하자 없는 최상급" },
+  { code: "S", short: "미개봉 · 최상급", description: "미개봉 또는 하자 없는 최상급" },
   { code: "A", short: "하자 거의 없음", description: "눈에 띄는 하자 없음, 아주 미세한 생활 기스 가능" },
   { code: "B", short: "경미한 하자", description: "작은 스크래치/찍힘/인쇄 밀림 등 경미한 하자 있음" },
   { code: "C", short: "눈에 띄는 하자", description: "눈에 띄는 찍힘, 눌림, 모서리 손상, 표면 흠집 있음" },
@@ -14,11 +14,14 @@ export function ConditionGuide({ compact = false }: { compact?: boolean }) {
     return (
       <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
         <p className="text-sm font-medium text-slate-900">상태 등급</p>
-        <div className="grid gap-2 sm:grid-cols-5">
+        <div className="flex flex-wrap gap-2">
           {conditionGuide.map((item) => (
-            <div key={item.code} className="rounded-md border border-slate-200 bg-white px-2 py-2">
-              <Badge>{item.code}</Badge>
-              <p className="mt-1 text-xs font-medium text-slate-700">{item.short}</p>
+            <div
+              key={item.code}
+              className="inline-flex min-h-10 min-w-[118px] flex-1 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-2"
+            >
+              <Badge className="shrink-0">{item.code}</Badge>
+              <span className="whitespace-nowrap text-xs font-medium leading-none text-slate-700">{item.short}</span>
             </div>
           ))}
         </div>
