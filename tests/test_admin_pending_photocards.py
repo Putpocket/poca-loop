@@ -648,7 +648,7 @@ def test_approved_card_participates_in_three_way_matches(client, admin_headers):
     assert all("card_description" not in edge["card"] for edge in match["trade_edges"])
 
 
-def test_admin_can_merge_pending_photocard_into_existing_photocard(client, admin_headers):
+def test_admin_can_merge_pending_photocard_into_existing_photocard(db, client, admin_headers):
     card, grade = seed_catalog(client, admin_headers)
     user_headers = login_named_user(client, "merge-owner@example.com", "merge_owner")
     pending = create_pending(client, user_headers, "merge me")
@@ -688,6 +688,15 @@ def test_admin_can_merge_pending_photocard_into_existing_photocard(client, admin
     assert wants[0]["photocard_id"] == card["id"]
     assert wants[0]["pending_photocard_id"] is None
     assert wants[0]["pending_photocard"] is None
+    db.expire_all()
+    stored_have = db.get(UserHave, haves[0]["id"])
+    stored_want = db.get(UserWant, wants[0]["id"])
+    assert stored_have.photocard_id == card["id"]
+    assert stored_have.pending_photocard_id is None
+    assert (stored_have.photocard_id is None) != (stored_have.pending_photocard_id is None)
+    assert stored_want.photocard_id == card["id"]
+    assert stored_want.pending_photocard_id is None
+    assert (stored_want.photocard_id is None) != (stored_want.pending_photocard_id is None)
 
 
 def test_merge_pending_photocard_requires_login_and_admin(client, admin_headers):
@@ -781,6 +790,16 @@ def test_merged_pending_photocard_cannot_be_approved(client, admin_headers):
 
 def test_merged_remerge_policy_matches_readme(client, admin_headers):
     card, _ = seed_catalog(client, admin_headers)
+    second_target = client.post(
+        "/api/v1/catalog/photocards",
+        json={
+            "group_id": card["group_id"],
+            "member_id": card["member_id"],
+            "release_id": card["release_id"],
+            "name": "Ignored Merge Target",
+        },
+        headers=admin_headers,
+    ).json()
     user_headers = login_named_user(client, "merge-readme@example.com", "merge_readme")
     pending = create_pending(client, user_headers, "readme merge policy")
 
@@ -791,7 +810,7 @@ def test_merged_remerge_policy_matches_readme(client, admin_headers):
     )
     second = client.post(
         f"/api/v1/admin/pending-photocards/{pending['id']}/merge",
-        json={"photocard_id": card["id"], "reason": "ignored merge"},
+        json={"photocard_id": second_target["id"], "reason": "ignored merge"},
         headers=admin_headers,
     )
 
@@ -802,6 +821,7 @@ def test_merged_remerge_policy_matches_readme(client, admin_headers):
     assert second.status_code == 200
     assert second.json()["catalog_status"] == "merged"
     assert second.json()["merged_photocard_id"] == first.json()["merged_photocard_id"]
+    assert second.json()["merged_photocard_id"] == card["id"]
     assert second.json()["review_reason"] == "first merge"
     assert "이미 병합된 항목에 다시 요청하면 기존 병합 결과를 200으로 반환합니다" in readme_text
 
@@ -1012,7 +1032,11 @@ def test_merged_card_participates_in_direct_matches(client, admin_headers):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
-    assert response.json()[0]["user_a_gives"]["photocard"]["id"] == card["id"]
+    match = response.json()[0]
+    assert match["user_a_gives"]["photocard"]["id"] == card["id"]
+    for side in ("user_a_gives", "user_a_receives", "user_b_gives", "user_b_receives"):
+        assert "card_description" not in match[side]["photocard"]
+        assert "catalog_status" not in match[side]["photocard"]
 
 
 def test_merged_card_participates_in_three_way_matches(client, admin_headers):
@@ -1081,11 +1105,15 @@ def test_merged_card_participates_in_three_way_matches(client, admin_headers):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
-    assert {edge["card"]["id"] for edge in response.json()[0]["trade_edges"]} == {
+    match = response.json()[0]
+    assert {edge["card"]["id"] for edge in match["trade_edges"]} == {
         card["id"],
         card_b["id"],
         card_c["id"],
     }
+    for edge in match["trade_edges"]:
+        assert "card_description" not in edge["card"]
+        assert "catalog_status" not in edge["card"]
 
 
 def test_transfer_deletes_duplicate_pending_want(db, client, admin_headers):
