@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { api, Group, Member, PendingPhotocard, Photocard, Release } from "../lib/api";
 import { releaseSourceSummary, sourceTypeLabel } from "../lib/release-source";
 import { cn } from "../lib/utils";
-import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Select } from "./ui/select";
@@ -602,16 +601,15 @@ function ChoiceStep<T extends CatalogChoice<{ id: number }>>({
 
   return (
     <section className={cn("grid gap-2", disabled && "opacity-60")}>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        {selectedChoice ? <Badge>선택됨</Badge> : null}
+      <div className="flex h-5 items-center">
+        <h3 className="truncate text-sm font-semibold leading-5 text-slate-800">{title}</h3>
       </div>
       <div className="relative">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
           <Input
             className="pl-9"
-            placeholder={disabled ? "이전 단계 필요" : selectedChoice ? "선택됨 · 다시 검색" : "검색"}
+            placeholder={disabled ? "이전 단계 필요" : "검색"}
             value={inputValue}
             disabled={disabled}
             onFocus={() => {
