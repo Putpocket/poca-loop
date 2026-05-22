@@ -3,6 +3,7 @@ import { AppLayout } from "../components/app-layout";
 import { AdminPendingPhotocardsPage } from "../pages/admin-pending-photocards";
 import { DashboardPage } from "../pages/dashboard";
 import { DirectMatchesPage } from "../pages/direct-matches";
+import { ExplorePage } from "../pages/explore";
 import { HavesPage } from "../pages/haves";
 import { LoginPage } from "../pages/login";
 import { SignupPage } from "../pages/signup";
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
+      { path: "explore", element: <ExplorePage /> },
       { path: "haves", element: <HavesPage /> },
       { path: "wants", element: <WantsPage /> },
       { path: "matches/direct", element: <DirectMatchesPage /> },

@@ -132,6 +132,31 @@ export type ThreeWayMatch = {
   generated_at: string;
 };
 
+export type ExploreCardEntry = {
+  entry_type: "have" | "want";
+  username: string;
+  group: Group;
+  member: Pick<Member, "id" | "name" | "stage_name">;
+  release_source: Pick<
+    Release,
+    "id" | "title" | "source_type" | "retailer_or_event" | "venue" | "country" | "round" | "detail"
+  > | null;
+  photocard: Pick<Photocard, "id" | "name" | "version">;
+  condition_grade: ConditionGrade | null;
+  minimum_condition_grade: ConditionGrade | null;
+  created_at: string;
+};
+
+export type ExploreCardFilters = {
+  entry_type?: "have" | "want";
+  group_id?: number;
+  member_id?: number;
+  release_id?: number;
+  photocard_id?: number;
+  source_type?: string;
+  limit?: number;
+};
+
 class ApiError extends Error {
   status: number;
 
@@ -259,6 +284,16 @@ export const api = {
       body: JSON.stringify(payload)
     }),
   deleteWant: (id: number) => request<void>(`/api/v1/me/cards/wants/${id}`, { method: "DELETE" }),
+  exploreCards: (filters: ExploreCardFilters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.set(key, String(value));
+      }
+    });
+    const query = params.toString();
+    return request<ExploreCardEntry[]>(`/api/v1/explore/cards${query ? `?${query}` : ""}`);
+  },
   directMatches: () => request<DirectMatch[]>("/matches/direct"),
   threeWayMatches: () => request<ThreeWayMatch[]>("/matches/three-way"),
   svgUrl: () => `${API_BASE_URL}/templates/me.svg`
