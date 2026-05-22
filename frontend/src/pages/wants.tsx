@@ -5,6 +5,7 @@ import { WantCardItem } from "../components/card-item";
 import { ConditionGuide } from "../components/condition-guide";
 import { EmptyState, ErrorState, LoadingState } from "../components/state-blocks";
 import { Alert } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { api, getFriendlyError, UserWant } from "../lib/api";
 
@@ -61,8 +62,7 @@ export function WantsPage() {
         <CardHeader>
           <CardTitle>{editing ? "원하는 카드 수정" : "원하는 카드 추가"}</CardTitle>
           <CardDescription>
-            받고 싶은 카드를 검색/선택하고 최소 허용 등급을 등록합니다. 잘못된 Want는 수정하거나 삭제할 수 있습니다.
-            임시 포카는 자동 매칭이 제한될 수 있습니다.
+            받고 싶은 포카를 검색해 추가합니다. 최소 등급을 고르면 매칭 조건에 반영돼요.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -92,33 +92,42 @@ export function WantsPage() {
         </CardContent>
       </Card>
 
-      <section className="grid gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-950">내 원하는 카드</h1>
-          <p className="mt-1 text-sm text-slate-500">매칭에서 받을 후보 카드입니다.</p>
-        </div>
-        {wants.isLoading ? <LoadingState /> : null}
-        {wants.isError ? <ErrorState message={getFriendlyError(wants.error)} /> : null}
-        {wants.data?.length === 0 ? <EmptyState title="아직 원하는 카드가 없습니다." description="왼쪽 폼에서 원하는 카드를 추가하세요." /> : null}
-        <div className="grid gap-3">
-          {wants.data?.map((item) => (
-            <WantCardItem
-              key={item.id}
-              item={item}
-              deleting={deleteMutation.isPending}
-              onEdit={() => {
-                setMessage(null);
-                setEditing(item);
-              }}
-              onDelete={() => {
-                if (!window.confirm("이 원하는 카드를 삭제할까요?")) return;
-                setMessage(null);
-                deleteMutation.mutate(item.id);
-              }}
-            />
-          ))}
-        </div>
-      </section>
+      <Card className="self-start">
+        <CardHeader>
+          <CardTitle>내 원하는 카드</CardTitle>
+          <CardDescription>매칭에서 받고 싶은 카드입니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          {wants.isLoading ? <LoadingState /> : null}
+          {wants.isError ? <ErrorState message={getFriendlyError(wants.error)} /> : null}
+          {wants.data?.length === 0 ? (
+            <div className="grid gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4">
+              <EmptyState title="아직 원하는 카드가 없어요." description="왼쪽에서 받고 싶은 카드를 추가해보세요." />
+              <Button type="button" variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+                원하는 카드 추가하기
+              </Button>
+            </div>
+          ) : null}
+          <div className="grid gap-3">
+            {wants.data?.map((item) => (
+              <WantCardItem
+                key={item.id}
+                item={item}
+                deleting={deleteMutation.isPending}
+                onEdit={() => {
+                  setMessage(null);
+                  setEditing(item);
+                }}
+                onDelete={() => {
+                  if (!window.confirm("이 원하는 카드를 삭제할까요?")) return;
+                  setMessage(null);
+                  deleteMutation.mutate(item.id);
+                }}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
