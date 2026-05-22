@@ -1,16 +1,135 @@
 # poca-loop
 
-K-POP 팬덤용 포토카드 교환 매칭 백엔드 MVP입니다. 사용자는 보유 카드와 원하는 카드를 텍스트 메타데이터로 등록하고, 1:1 또는 3자 순환 교환 후보를 조회할 수 있습니다.
+poca-loop은 K-POP 포토카드 교환을 위한 텍스트 기반 매칭 MVP입니다. 사용자는 보유한 포카와 원하는 포카를 등록하고, 1:1 또는 3자 순환 교환 후보를 확인할 수 있습니다.
 
-저작권 있는 포토카드 원본 이미지는 저장하거나 배포하지 않습니다. 이 프로젝트는 포토카드 텍스트 메타데이터와 검증된 외부 링크 중심으로 설계합니다.
+프로젝트의 핵심 방향은 명확합니다.
+
+- 저작권 있는 포토카드 원본 이미지를 저장하거나 배포하지 않습니다.
+- 크롤링, OCR, AI/LLM 인식 없이 사용자가 입력한 텍스트 메타데이터를 사용합니다.
+- 거래, 배송, 결제, 주소, 실명, 계좌 정보를 다루지 않습니다.
+- poca-loop은 거래 중개 서비스가 아니라 매칭과 체크리스트를 돕는 도구입니다.
 
 ## Screenshots
 
-![Login screen](docs/screenshots/login.png)
+아래 이미지는 GitHub 공개용 시연 이미지를 넣을 자리입니다. 현재 저장소에는 샘플 스크린샷 파일 경로만 준비되어 있습니다.
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Login screen placeholder](docs/screenshots/login.png)
 
-![Mobile dashboard](docs/screenshots/mobile-dashboard.png)
+![Dashboard placeholder](docs/screenshots/dashboard.png)
+
+![Mobile dashboard placeholder](docs/screenshots/mobile-dashboard.png)
+
+추가로 넣기 좋은 시연 이미지:
+
+- Have/Want 등록 화면
+- 1:1 매칭 화면
+- 3자 매칭 화면
+- 관리자 임시 포카 검토 화면
+- 공유용 체크리스트 SVG 예시
+
+## 주요 기능
+
+사용자 기능:
+
+- 회원가입, 로그인, JWT 인증
+- 정식 카탈로그 포카 기반 Have/Want 등록, 수정, 삭제
+- 카탈로그에 없는 포카의 텍스트 기반 임시 등록
+- 1:1 직접 교환 후보 조회
+- 3자 순환 교환 후보 조회
+- 로그인 사용자 본인 데이터만 담은 공유용 SVG 체크리스트 생성
+- 매칭 결과를 외부 채팅에 붙여넣기 쉬운 교환 제안 문구로 복사
+
+관리자 기능:
+
+- 그룹, 멤버, 릴리즈/출처, 포토카드, 상태 등급 CRUD
+- 임시 포카 목록 검토
+- 임시 포카 거절
+- 임시 포카를 새 정식 Photocard로 승인
+- 임시 포카를 기존 정식 Photocard에 병합
+- 승인/병합 시 기존 UserHave/UserWant를 정식 photocard_id로 이전
+
+매칭과 데이터 정책:
+
+- 1:1 매칭은 로그인한 사용자가 직접 참여한 후보만 반환합니다.
+- 3자 매칭은 로그인한 사용자가 포함된 순환 후보만 반환합니다.
+- 임시 포카는 정식 카탈로그가 아니므로 자동 매칭에서 제외됩니다.
+- 승인 또는 병합된 임시 포카는 정식 photocard_id로 이전되어 정식 포카 기반 매칭에 참여합니다.
+- 상태 등급 우선순위는 `S > A > B > C > D`입니다. `D` 등급은 상대가 명시적으로 `D` 이상을 허용한 경우에만 매칭됩니다.
+
+## 사용자 시연 흐름
+
+1. 사용자가 회원가입하고 로그인합니다.
+2. 카탈로그에서 포카를 선택해 Have를 등록합니다.
+3. 원하는 포카를 Want로 등록합니다.
+4. 다른 사용자의 Have/Want와 조건이 맞으면 1:1 매칭이 표시됩니다.
+5. 세 명의 사용자가 순환 구조를 만들면 3자 매칭이 표시됩니다.
+6. 사용자는 매칭 화면에서 교환 제안 문구를 복사해 외부 채팅에 붙여넣습니다.
+7. 사용자는 본인 Have/Want 목록을 SVG 체크리스트로 공유할 수 있습니다.
+
+카탈로그에 없는 포카 흐름:
+
+1. 사용자가 사진 없이 텍스트 메타데이터로 임시 포카를 등록합니다.
+2. 임시 포카를 Have 또는 Want에 연결합니다.
+3. 사용자 목록에는 임시 등록/자동 매칭 제한 상태가 표시됩니다.
+4. 관리자가 승인 또는 병합하면 Have/Want가 정식 photocard_id로 이전됩니다.
+5. 이전 후 사용자 목록과 공유용 체크리스트에서는 정식 포카 정보가 표시됩니다.
+
+## 관리자 시연 흐름
+
+1. seed 관리자 계정으로 로그인합니다.
+2. 그룹, 멤버, 릴리즈/출처, 포토카드, 상태 등급을 생성합니다.
+3. `/admin/pending-photocards`에서 사용자가 등록한 임시 포카를 확인합니다.
+4. 정식 카탈로그에 넣지 않을 항목은 거절합니다.
+5. 새 정식 포카로 만들 항목은 승인합니다.
+6. 이미 존재하는 정식 포카와 같은 항목은 기존 포카에 병합합니다.
+7. 승인/병합 후 해당 임시 포카를 참조하던 Have/Want는 정식 photocard_id로 이전됩니다.
+
+상태 전이:
+
+- `pending`: 사용자가 사진 없이 텍스트로 등록한 초기 상태
+- `rejected`: 관리자가 정식 카탈로그로 반영하지 않기로 한 상태
+- `approved`: 관리자가 새 정식 Photocard로 승인한 상태
+- `merged`: 관리자가 기존 정식 Photocard에 병합한 상태
+
+승인/병합 중복 정리 정책:
+
+- `UserWant`: 같은 사용자가 이미 같은 정식 `photocard_id`를 Want로 갖고 있으면 pending 기반 Want는 삭제합니다.
+- `UserHave`: 같은 사용자가 이미 같은 정식 `photocard_id + condition_grade_id`를 Have로 갖고 있으면 pending 기반 Have는 삭제합니다.
+- `UserHave`: 같은 정식 `photocard_id`라도 상태 등급이 다르면 둘 다 유지합니다.
+- 승인/병합은 하나의 DB 트랜잭션으로 처리되어야 하며, 중간 실패 시 반쯤 이전된 상태를 남기지 않습니다.
+
+Idempotent 정책:
+
+- 이미 승인된 항목에 다시 요청하면 기존 승인 결과를 200으로 반환합니다.
+- 이미 병합된 항목에 다시 요청하면 기존 병합 결과를 200으로 반환합니다.
+- 이미 거절된 항목에 다시 거절 요청을 보내면 200으로 rejected 상태를 반환하며 새 사유가 있으면 갱신합니다.
+
+## 하지 않는 것
+
+아래 기능은 의도적으로 구현하지 않았습니다.
+
+- 포토카드 이미지 업로드, 이미지 저장, 이미지 공개
+- OCR, AI 이미지 인식, 크롤링, LLM
+- Discord 봇
+- 내장 채팅, DM, WebSocket 대화방
+- 오픈채팅 링크 저장
+- 공개 탐색 목록
+- 교환 제안함
+- 결제, 배송, 주소, 실명, 계좌 정보 저장
+- 실명 인증
+- 4자 이상 다자간 매칭
+- 임시 포카 텍스트 자동 매칭
+
+## 보안/저작권 정책
+
+- `.env`, `.env.deploy`, 로컬 DB 파일, 캐시, 가상환경은 커밋하지 않습니다.
+- `SECRET_KEY`, DB 비밀번호, seed 관리자 비밀번호는 운영에서 반드시 교체해야 합니다.
+- 비밀번호는 Argon2 기반 해시로 저장하며 평문 저장하지 않습니다.
+- JWT access token은 현재 MVP 프론트엔드에서 `localStorage`에 저장합니다. 운영 전에는 httpOnly secure cookie 기반 세션 또는 더 안전한 토큰 저장 방식으로 전환해야 합니다.
+- 일반 응답에는 `hashed_password`, 내부 권한 필드, 토큰 서명키, 환경변수 값을 포함하지 않습니다.
+- 매칭 및 체크리스트 API는 로그인한 사용자 본인의 데이터만 반환합니다.
+- 공유용 체크리스트는 SVG 텍스트 렌더링이며 포토카드 이미지, 외부 이미지, 외부 CSS, 외부 폰트를 포함하지 않습니다.
+- 교환 전 실물 사진, 상태, 출처 확인은 사용자가 선택한 외부 채팅에서 직접 해야 합니다.
 
 ## 기술 스택
 
@@ -23,67 +142,146 @@ K-POP 팬덤용 포토카드 교환 매칭 백엔드 MVP입니다. 사용자는 
 - Redis
 - pytest
 - Docker Compose
-- React, Vite, TypeScript, Tailwind CSS
-- TanStack Query, React Router, React Hook Form, Zod
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- TanStack Query
+- React Router
+- React Hook Form
+- Zod
 
-## 포함된 범위
+## 빠른 시작
 
-- FastAPI API 서버
-- PostgreSQL 연결
-- SQLAlchemy 2.x 모델
-- Alembic 마이그레이션
-- Docker Compose 실행 환경
-- 사용자 회원가입/로그인
-- Argon2 기반 비밀번호 해싱
-- JWT 인증
-- 관리자 전용 카탈로그 CRUD
-- 포토카드 상태 등급 CRUD
-- 사용자 보유 카드 등록/조회
-- 사용자 원하는 카드 등록/조회
-- 1:1 직접 교환 매칭 조회
-- 3자 순환 교환 매칭 조회
-- 로그인 사용자 텍스트 기반 공유용 체크리스트 생성
-- 상태 등급 안내 UI
-- 매칭 결과 기반 교환 제안 텍스트 복사
-- idempotent seed 스크립트
-- pytest 기본 테스트
+Docker Compose 개발 배포:
 
-## 제외된 범위
+```bash
+cp .env.example .env.deploy
+# SECRET_KEY, SEED_ADMIN_PASSWORD는 반드시 바꾸세요.
+docker compose --env-file .env.deploy up --build -d
+```
 
-아래 기능은 의도적으로 구현하지 않았습니다.
+접속:
 
-- 4자 이상 다자간 매칭
-- Discord 봇
-- 크롤링
-- LLM
-- 이미지 업로드 또는 파일 업로드
-- 결제, 배송, 주소 관리
-- 실명 인증
-- 계좌 정보 저장
+```text
+Frontend: http://localhost:8080
+API health: http://localhost:8000/health
+OpenAPI: http://localhost:8000/docs
+```
 
-특히 이미지 호스팅, 크롤링, LLM, 결제/배송 처리, 주소/실명/계좌 정보 저장은 하지 않습니다.
+컨테이너 시작 시 API 컨테이너가 자동으로 실행합니다.
 
-## 교환 대화와 안전 정책
+```bash
+alembic upgrade head
+python -m app.db.seed
+```
 
-poca-loop은 내장 채팅, DM, WebSocket 대화방을 제공하지 않습니다. 실제 대화, 실물 사진 확인, 약속 조율은 사용자가 선택한 외부 채널에서 진행합니다.
+개발 서버를 내릴 때:
 
-poca-loop은 거래, 배송, 결제 중개 서비스가 아니라 매칭 보조 도구입니다. 서비스 안에 주소, 계좌, 실명, 전화번호를 입력하거나 저장하지 마세요.
+```bash
+docker compose --env-file .env.deploy down
+```
 
-매칭 결과 화면의 `교환 제안 복사` 버튼은 외부 채널에 붙여넣기 쉬운 텍스트만 생성합니다. 생성 텍스트에는 이메일, 내부 DB ID, 권한 필드, 개인정보를 넣지 않습니다.
+PostgreSQL 데이터 볼륨까지 지울 때만 수동으로 `down -v`를 사용하세요.
 
-상태 등급 기준:
+## 로컬 venv 개발
 
-- `S`: 미개봉 또는 하자 없는 최상급
-- `A`: 눈에 띄는 하자 없음, 아주 미세한 생활 기스 가능
-- `B`: 작은 스크래치/찍힘/인쇄 밀림 등 경미한 하자 있음
-- `C`: 눈에 띄는 찍힘, 눌림, 모서리 손상, 표면 흠집 있음
-- `D`: 접힘, 오염, 큰 찍힘, 물결, 심한 손상 있음
+```bash
+cp .env.example .env
+make install
+make migrate
+make seed
+make dev
+```
 
-최종 상태 판단은 교환 당사자가 외부 채널에서 실물 사진으로 직접 확인해야 합니다.
+로컬 venv 개발용 `.env` 예시:
 
-## 카탈로그 릴리즈/출처 메타데이터
+```text
+DATABASE_URL=postgresql+psycopg://pocaloop:pocaloop_example_password@localhost:5432/pocaloop
+REDIS_URL=redis://localhost:6379/0
+```
 
-포토카드 출처는 정식 릴리즈뿐 아니라 POB, 럭드, 공방, 팝업, 팬싸, MD처럼 다양합니다. poca-loop은 `source_type`을 큰 분류로만 두고, 실제 세부 구분은 별도 출처 메타데이터 필드에 저장합니다.
+프론트엔드 개발:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+기본 프론트엔드 개발 주소:
+
+```text
+http://localhost:5173
+```
+
+LAN 기기에서 접속할 때는 `frontend/.env`에 서버 주소를 지정합니다.
+
+```text
+VITE_API_BASE_URL=http://<server-lan-ip>:8000
+```
+
+백엔드 `.env`의 `BACKEND_CORS_ORIGINS`에도 해당 Vite origin을 추가해야 합니다.
+
+## 주요 API
+
+인증:
+
+```text
+POST /api/v1/auth/signup
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+```
+
+카탈로그:
+
+```text
+GET  /api/v1/catalog/groups
+GET  /api/v1/catalog/members
+GET  /api/v1/catalog/releases
+GET  /api/v1/catalog/photocards
+POST /api/v1/catalog/groups              # admin
+POST /api/v1/catalog/members             # admin
+POST /api/v1/catalog/releases            # admin
+POST /api/v1/catalog/photocards          # admin
+```
+
+사용자 카드:
+
+```text
+GET    /api/v1/me/cards/haves
+POST   /api/v1/me/cards/haves
+PATCH  /api/v1/me/cards/haves/{id}
+DELETE /api/v1/me/cards/haves/{id}
+GET    /api/v1/me/cards/wants
+POST   /api/v1/me/cards/wants
+PATCH  /api/v1/me/cards/wants/{id}
+DELETE /api/v1/me/cards/wants/{id}
+```
+
+매칭과 체크리스트:
+
+```text
+GET /matches/direct
+GET /matches/three-way
+GET /templates/me.svg
+GET /api/v1/templates/me.svg
+```
+
+임시 포카:
+
+```text
+POST /api/v1/catalog/pending-photocards
+GET  /api/v1/me/pending-photocards
+GET  /api/v1/admin/pending-photocards?limit=50
+POST /api/v1/admin/pending-photocards/{id}/approve
+POST /api/v1/admin/pending-photocards/{id}/merge
+POST /api/v1/admin/pending-photocards/{id}/reject
+```
+
+## 릴리즈/출처 메타데이터
+
+포토카드 출처는 정식 릴리즈뿐 아니라 POB, 럭드, 공방, 팝업, 팬싸, MD처럼 다양합니다. poca-loop은 `source_type`을 큰 분류로 두고, 실제 세부 구분은 별도 출처 메타데이터 필드에 저장합니다.
 
 지원하는 `source_type`:
 
@@ -116,7 +314,7 @@ other
 - `start_date`, `end_date`: 기간
 - `notes`: 운영 메모
 
-팝업 포카 예시:
+예시:
 
 ```yaml
 source_type: popup
@@ -129,518 +327,73 @@ detail: 5만원 이상 구매 특전
 notes: 랜덤 포토카드 세트
 ```
 
-POB 예시:
-
-```yaml
-source_type: preorder_benefit
-title: "Fe3O4: BREAK"
-retailer_or_event: Apple Music
-country: KR
-round: 예약판매
-detail: POB A ver.
-```
-
-공방 예시:
-
-```yaml
-source_type: broadcast
-title: DASH 활동
-retailer_or_event: MBC 쇼! 음악중심
-country: KR
-round: 2024-01-20
-detail: 공방 참여 특전
-```
-
 기존 API의 `release_type` 필드는 호환성을 위해 유지하지만, 새 문서와 사용자 화면에서는 “릴리즈/출처”와 `source_type`을 기준으로 표현합니다.
 
-## 임시 포카
+## 교환 안전 안내
 
-정식 카탈로그에서 포카를 찾지 못한 사용자는 사진 없이 텍스트 기반 임시 포카를 등록할 수 있습니다. 임시 포카는 본인이 만든 항목만 조회하고 Have/Want에 사용할 수 있습니다.
+poca-loop은 내장 채팅을 제공하지 않습니다. 실제 대화, 실물 사진 확인, 약속 조율은 사용자가 선택한 외부 채널에서 진행합니다.
 
-임시 포카에 저장하는 정보:
+매칭 결과 화면의 `교환 제안 복사` 버튼은 외부 채널에 붙여넣기 쉬운 텍스트만 생성합니다. 생성 텍스트에는 이메일, 내부 DB ID, 권한 필드, 개인정보를 넣지 않습니다.
 
-- 그룹/멤버: 정식 카탈로그와 연결하거나 텍스트 이름으로 저장
-- 출처 유형과 대략적인 릴리즈/출처명
-- 판매처/이벤트, 장소, 회차, 상세 설명
-- 카드 설명, 버전, 메모
+상태 등급 기준:
 
-중요 정책:
+- `S`: 미개봉 또는 하자 없는 최상급
+- `A`: 눈에 띄는 하자 없음, 아주 미세한 생활 기스 가능
+- `B`: 작은 스크래치/찍힘/인쇄 밀림 등 경미한 하자 있음
+- `C`: 눈에 띄는 찍힘, 눌림, 모서리 손상, 표면 흠집 있음
+- `D`: 접힘, 오염, 큰 찍힘, 물결, 심한 손상 있음
 
-- 포토카드 사진 업로드, 이미지 저장, 이미지 공개를 하지 않습니다.
-- OCR, AI 이미지 인식, 크롤링, LLM을 사용하지 않습니다.
-- 임시 포카는 정식 카탈로그가 아니며 `catalog_status=pending`, `rejected`, `approved`, `merged` 상태를 가질 수 있습니다.
-- 임시 포카는 현재 자동 매칭이 제한될 수 있습니다. 정식 포카 기반 매칭은 그대로 동작합니다.
-- 교환 전에는 외부 채팅에서 실물 사진과 출처를 반드시 확인해야 합니다.
-- 관리자는 임시 포카를 새 정식 Photocard로 승인하거나 기존 Photocard에 병합하거나 거절할 수 있습니다.
+최종 상태 판단은 교환 당사자가 외부 채널에서 실물 사진으로 직접 확인해야 합니다.
 
-관련 API:
+## 테스트/검증
 
-```text
-POST /api/v1/catalog/pending-photocards
-GET  /api/v1/me/pending-photocards
-```
-
-Have/Want 등록과 수정 API는 기존 `photocard_id` 방식과 새 `pending_photocard_id` 방식을 모두 지원합니다. 단, 둘 중 하나만 보낼 수 있습니다.
-
-### 임시 포카 승인/병합 설계
-
-임시 포카가 계속 `pending` 상태로만 남으면 같은 포카가 여러 이름으로 중복 등록될 수 있습니다. 운영 단계에서는 관리자가 임시 포카를 검토해 정식 카탈로그로 승격하거나 기존 정식 포카에 병합하는 흐름이 필요합니다.
-
-`PendingPhotocard.catalog_status` 상태 전이:
-
-- `pending`: 사용자가 사진 없이 텍스트로 등록한 초기 상태입니다.
-- `rejected`: 관리자가 정식 카탈로그로 승인하거나 병합하지 않기로 한 상태입니다.
-- `approved`: 관리자가 검토 후 새 정식 `Photocard`로 승인한 상태입니다.
-- `merged`: 관리자가 기존 정식 `Photocard`와 같은 항목이라고 판단해 병합한 상태입니다.
-
-관리자 검토 흐름:
-
-1. 관리자는 pending photocard 목록을 봅니다.
-2. 그룹, 멤버, 릴리즈/출처, 판매처/이벤트, 장소, 회차, 상세 설명, 카드 설명을 검토합니다.
-3. 현재 관리자는 새 정식 `Photocard` 승인, 기존 `Photocard` 병합, 거절을 실행할 수 있습니다.
-4. 승인/병합/거절 결과는 `reviewed_by_admin_id`, `reviewed_at`, `review_reason`에 남깁니다. 향후 별도 감사 로그로 확장하는 방향입니다.
-
-승인 시 데이터 이전 정책:
-
-- 새 정식 포카로 승인하면 `photocards`에 새 행을 만들고, 해당 임시 포카를 참조하던 `user_haves`와 `user_wants`를 새 `photocard_id`로 이전합니다.
-- 이전 후 Have/Want는 `pending_photocard_id=NULL`, `photocard_id=<정식 포카 ID>` 상태가 되어야 합니다.
-- 이전은 반드시 하나의 DB 트랜잭션으로 처리합니다. 중간 실패 시 Have/Want가 임시 포카와 정식 포카를 동시에 참조하거나 둘 다 참조하지 않는 상태가 남으면 안 됩니다.
-- `UserWant`: 같은 사용자가 이미 같은 정식 `photocard_id`를 Want로 갖고 있으면 pending 기반 Want는 삭제합니다.
-- `UserHave`: 같은 사용자가 이미 같은 정식 `photocard_id + condition_grade_id`를 Have로 갖고 있으면 pending 기반 Have는 삭제합니다.
-- `UserHave`: 같은 정식 `photocard_id`라도 `condition_grade_id`가 다르면 기존 정책에 맞춰 둘 다 유지합니다.
-
-병합 시 데이터 이전 정책:
-
-- 기존 정식 포카에 병합하면 해당 임시 포카를 참조하던 `user_haves`와 `user_wants`를 기존 `photocard_id`로 이전합니다.
-- 이전 후 Have/Want는 `pending_photocard_id=NULL`, `photocard_id=<병합 대상 정식 포카 ID>` 상태가 되어야 합니다.
-- 병합도 승인과 같은 중복 정리 정책을 사용합니다.
-- `UserWant`: 같은 사용자가 이미 같은 정식 `photocard_id`를 Want로 갖고 있으면 pending 기반 Want는 삭제합니다.
-- `UserHave`: 같은 사용자가 이미 같은 정식 `photocard_id + condition_grade_id`를 Have로 갖고 있으면 pending 기반 Have는 삭제합니다.
-- `UserHave`: 같은 정식 `photocard_id`라도 `condition_grade_id`가 다르면 기존 정책에 맞춰 둘 다 유지합니다.
-- 병합은 반드시 하나의 DB 트랜잭션으로 처리합니다. 중간 실패 시 Have/Want가 임시 포카와 정식 포카를 동시에 참조하거나 둘 다 참조하지 않는 상태가 남으면 안 됩니다.
-
-거절 정책:
-
-- `rejected`는 정식 카탈로그에 포함하지 않는다는 뜻입니다.
-- 거절만으로 기존 사용자의 Have/Want를 자동 삭제하지 않습니다.
-- 거절된 임시 포카는 사용자 화면에서 “카탈로그 반영 거절”처럼 명확히 표시하고, 사용자가 직접 삭제하거나 수정하도록 안내하는 방향이 안전합니다.
-- 거절된 임시 포카는 자동 매칭 대상에서 계속 제외합니다.
-
-이번 단계에서 제공하는 조회 기능:
-
-- `GET /api/v1/admin/pending-photocards`: 관리자 전용 임시 포카 검토 목록
-- `POST /api/v1/admin/pending-photocards/{id}/approve`: 관리자 전용 새 정식 포카 승인
-- `POST /api/v1/admin/pending-photocards/{id}/merge`: 관리자 전용 기존 정식 포카 병합
-- `POST /api/v1/admin/pending-photocards/{id}/reject`: 관리자 전용 임시 포카 거절
-- 프론트엔드 `/admin/pending-photocards`: 관리자용 검토/승인/거절 화면
-- 일반 사용자는 403 응답을 받으며, 프론트엔드는 “관리자 권한이 필요합니다.” 메시지를 표시합니다.
-- 승인 API는 idempotent하게 동작합니다. 이미 승인된 항목에 다시 요청해도 기존 `approved_photocard_id`를 유지한 채 200으로 `approved` 상태를 반환합니다.
-- 병합 API는 idempotent하게 동작합니다. 이미 병합된 항목에 다시 요청하면 기존 병합 결과를 200으로 반환합니다.
-- 거절 API는 idempotent하게 동작합니다. 이미 거절된 항목에 다시 요청해도 200으로 `rejected` 상태를 반환하며, 새 사유가 있으면 `review_reason`을 갱신합니다.
-
-남은 TODO:
-
-- 승인/병합 감사 로그
-
-이번 단계에서 만들지 않는 것:
-
-- 포토카드 이미지 업로드/저장/공개
-- OCR, AI 이미지 인식, 크롤링, LLM
-- 내장 채팅, DM, WebSocket, 오픈채팅 링크 저장
-- 결제, 배송, 주소, 실명, 계좌 정보
-- 공개 탐색 목록, 교환 제안함
-- 임시 포카 텍스트 자동 매칭
-
-## 환경변수
-
-`.env.example`을 복사해서 `.env`를 만듭니다.
+백엔드 테스트:
 
 ```bash
-cp .env.example .env
+make test
 ```
 
-주요 값:
-
-- `SECRET_KEY`: JWT 서명용 비밀키입니다. `.env.example` 값은 예시이며 운영에서는 긴 랜덤 문자열로 바꾸세요.
-- `DATABASE_URL`: SQLAlchemy PostgreSQL 연결 문자열입니다.
-- `REDIS_URL`: Redis 연결 문자열입니다. 1단계에서는 구조 준비용입니다.
-- `BACKEND_CORS_ORIGINS`: 허용할 CORS origin 목록입니다. Vite dev server를 쓰면 `http://localhost:5173` 또는 LAN 접속 origin을 추가합니다.
-- `SEED_ADMIN_EMAIL`: seed 스크립트가 만들 관리자 이메일입니다.
-- `SEED_ADMIN_USERNAME`: seed 스크립트가 만들 관리자 username입니다.
-- `SEED_ADMIN_PASSWORD`: seed 스크립트가 만들 관리자 비밀번호입니다. 운영에서는 반드시 바꾸세요.
-
-`.env`는 Git에 커밋하지 않습니다.
-
-## Local venv development
+프론트엔드 빌드:
 
 ```bash
-cp .env.example .env
-make install
+cd frontend
+npm run build
 ```
 
-로컬 venv 개발은 Docker 권한이 없어도 가능합니다. PostgreSQL/Redis는 둘 중 하나로 준비합니다.
-
-- 호스트에 PostgreSQL/Redis를 직접 설치해서 실행
-- 또는 DB/Redis만 별도로 Docker Compose 등으로 실행
-
-`.env`에서 로컬 개발용 값을 사용합니다.
-
-```text
-DATABASE_URL=postgresql+psycopg://pocaloop:pocaloop_example_password@localhost:5432/pocaloop
-REDIS_URL=redis://localhost:6379/0
-```
-
-마이그레이션과 seed를 실행합니다.
+Docker 배포 검증:
 
 ```bash
-make migrate
-make seed
-```
-
-개발 서버를 실행합니다.
-
-```bash
-make dev
-```
-
-API 서버:
-
-```text
-http://localhost:8000
-```
-
-헬스 체크:
-
-```bash
+docker compose --env-file .env.deploy ps
+docker compose --env-file .env.deploy exec api alembic current
 curl http://localhost:8000/health
 ```
 
-OpenAPI 문서:
-
-```text
-http://localhost:8000/docs
-```
-
-## Frontend development
-
-프론트엔드는 `frontend/` 디렉터리에 분리되어 있습니다. 백엔드 API는 기본적으로 `http://localhost:8000`을 호출합니다.
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-브라우저에서 여세요.
-
-```text
-http://localhost:5173
-http://192.168.10.203:5173
-```
-
-같은 서버에서 브라우저를 열어 `http://localhost:5173`로 접속할 때는 기본 API 주소를 그대로 둘 수 있습니다.
-
-```text
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-다른 기기에서 LAN 주소인 `http://192.168.10.203:5173`로 접속하면, 그 기기의 `localhost`는 서버가 아니라 접속한 기기 자신을 뜻합니다. 이 경우 `frontend/.env`에 서버 LAN IP를 API 주소로 지정합니다.
-
-```text
-VITE_API_BASE_URL=http://192.168.10.203:8000
-```
-
-백엔드 `.env`의 CORS origin에도 Vite dev server 주소를 추가해야 합니다.
-
-```text
-# 로컬 브라우저 접속
-BACKEND_CORS_ORIGINS=http://localhost:5173,http://localhost:8000
-
-# LAN 브라우저 접속
-BACKEND_CORS_ORIGINS=http://localhost:5173,http://192.168.10.203:5173
-```
-
-프로덕션 빌드:
-
-```bash
-cd frontend
-npm run build
-```
-
-현재 프론트엔드는 MVP 편의를 위해 JWT access token을 `localStorage`에 저장합니다. XSS가 발생하면 토큰이 탈취될 수 있으므로, 운영 전에는 httpOnly secure cookie 기반 세션 또는 토큰 저장 방식으로 전환해야 합니다.
-
-API 실패 시 화면에는 서버의 `detail` 메시지 또는 기본 오류 문구를 표시합니다. 로그인 토큰이 없으면 보호 페이지는 `/login`으로 이동합니다.
-
-TODO:
-
-- httpOnly cookie 인증으로 전환
-- 관리자 카탈로그 UI는 별도 단계에서 검토
-
-## Docker Compose deployment
-
-Docker Compose는 개발 서버에서 DB까지 포함해 한 번에 띄우는 배포/검증 경로입니다. 구성 서비스는 다음과 같습니다.
-
-- `frontend`: Vite 빌드 결과를 Nginx로 정적 서빙
-- `api`: FastAPI, Alembic migration, seed 자동 실행
-- `db`: PostgreSQL
-- `redis`: Redis
-
-OpenClaw 계정에 Docker 권한이 없는 환경에서는 이 단계는 건너뛰고 Local venv development를 사용하세요.
-
-Docker 배포용 환경 파일은 `.env.deploy`를 권장합니다. `.env`는 로컬 venv 개발용으로 남겨둘 수 있고, `.env.deploy`는 Git에 커밋하지 않습니다.
-
-`.env.deploy`에서 Docker용 DB/Redis URL은 `COMPOSE_DATABASE_URL`, `COMPOSE_REDIS_URL`로 분리되어 있습니다. 그래서 로컬 venv용 `DATABASE_URL`, `REDIS_URL` 값을 그대로 둬도 Compose 컨테이너는 내부 `db`, `redis` 서비스를 사용합니다.
-
-```text
-COMPOSE_DATABASE_URL=postgresql+psycopg://pocaloop:pocaloop_example_password@db:5432/pocaloop
-COMPOSE_REDIS_URL=redis://redis:6379/0
-FRONTEND_API_BASE_URL=
-FRONTEND_PORT=8080
-```
-
-Compose 설정 검증:
-
-```bash
-cp .env.example .env.deploy
-# SECRET_KEY, SEED_ADMIN_PASSWORD는 반드시 바꾸세요.
-docker compose --env-file .env.deploy config
-```
-
-실행:
-
-```bash
-docker compose --env-file .env.deploy up --build -d
-```
-
-컨테이너 시작 시 `alembic upgrade head`와 `python -m app.db.seed`가 자동 실행됩니다.
-
-접속:
-
-```text
-Frontend: http://localhost:8080
-LAN Frontend: http://192.168.10.203:8080
-API health: http://localhost:8000/health
-```
-
-Compose 프론트엔드는 같은 origin에서 API를 호출합니다. Nginx가 `/api`, `/matches`, `/templates`, `/health` 요청을 FastAPI 컨테이너로 프록시하므로 브라우저에서 별도 `VITE_API_BASE_URL`을 지정하지 않아도 됩니다.
-
-로그 확인과 종료:
-
-```bash
-docker compose logs -f api frontend
-docker compose --env-file .env.deploy down
-```
-
-## Troubleshooting
-
-- `npm run dev`는 Vite 개발 서버를 계속 실행하는 장시간 명령입니다. 터미널이나 자동화 환경에서는 명령이 끝나지 않아 실패처럼 보일 수 있지만, `Local: http://localhost:5173/`가 보이면 정상입니다.
-- LAN에서 프론트 화면은 열리지만 API가 실패하면 `VITE_API_BASE_URL`이 `localhost`로 남아 있거나, 백엔드 `BACKEND_CORS_ORIGINS`에 `http://192.168.10.203:5173`이 빠졌을 가능성이 큽니다.
-- 백엔드가 실행 중인지 `curl http://localhost:8000/health` 또는 LAN에서는 `curl http://192.168.10.203:8000/health`로 확인합니다.
-
-## 실행 검증 명령어
-
-자주 쓰는 개발/검증 명령입니다.
-
-```bash
-make install
-make migrate
-make seed
-make test
-make dev
-```
-
-## Development deployment workflow
-
-기능 추가나 수정 후에는 다음 순서로 검증하고 개발 서버에 재배포합니다.
-
-```bash
-make test
-cd frontend && npm run build && cd ..
-make deploy-dev
-curl http://localhost:8080/health
-```
-
-테스트용 배포를 내릴 때는 컨테이너와 네트워크만 제거합니다. PostgreSQL 데이터 볼륨은 보존됩니다.
-
-```bash
-make compose-down
-```
-
-데이터까지 완전히 지워야 할 때만 별도로 `docker compose --env-file .env.deploy down -v`를 사용합니다.
-
-Docker 임시 리소스 정리는 기본적으로 볼륨 보존형 명령을 사용합니다.
-
-```bash
-make docker-prune
-```
-
-`make docker-prune`은 `docker system prune -f`만 실행하므로 사용하지 않는 컨테이너, 네트워크, dangling 이미지, 빌드 캐시를 정리하되 PostgreSQL 볼륨은 지우지 않습니다. 이미지 전체 삭제가 필요할 때만 `make docker-prune-all`을 수동으로 사용합니다.
-
-데모 시나리오는 [docs/demo-scenario.md](docs/demo-scenario.md)를 참고하세요.
-
-Docker Compose 배포/검증 경로를 사용할 때는 다음 명령을 사용합니다.
-
-```bash
-docker compose --env-file .env.deploy config
-docker compose --env-file .env.deploy up --build -d
-```
-
-Makefile 별칭도 제공합니다.
-
-```bash
-make compose-config
-make deploy-dev
-make compose-down
-make docker-prune
-```
-
-`make compose-config`와 `make deploy-dev`는 `.env.deploy`가 없으면 `.env.example`에서 복사한 뒤 개발용 랜덤 `SECRET_KEY`, `SEED_ADMIN_PASSWORD`를 자동 생성합니다. 외부 공개 전에는 값을 직접 검토하세요.
-
-## 마이그레이션과 Seed
-
-Docker Compose로 실행하면 컨테이너 시작 시 자동으로 아래 순서가 실행됩니다.
-
-```bash
-alembic upgrade head
-python -m app.db.seed
-```
-
-수동으로 실행하려면 `.env`를 설정한 뒤 다음 명령을 사용합니다.
-
-```bash
-make migrate
-make seed
-```
-
-Seed는 여러 번 실행해도 중복 생성되지 않습니다. 생성되는 기본 데이터:
-
-- 관리자 계정 1개
-- 상태 등급 `S`, `A`, `B`, `C`, `D`
-- 샘플 그룹/멤버/릴리즈/포토카드 메타데이터
-
-## 테스트
-
-테스트는 SQLite in-memory DB를 사용해서 빠르게 실행됩니다.
-
-```bash
-make test
-```
-
-프론트엔드 검증:
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-## 주요 API
-
-버전 prefix가 있는 API는 `/api/v1` 아래에도 제공됩니다. 예를 들어 `/api/v1/auth/signup`, `/api/v1/matches/direct`를 사용할 수 있습니다.
-
-```text
-GET  /health
-POST /api/v1/auth/signup      # register
-POST /api/v1/auth/login
-GET  /api/v1/auth/me
-GET  /api/v1/admin/pending-photocards
-POST /api/v1/admin/pending-photocards/{id}/reject
-GET  /matches/direct
-GET  /matches/three-way
-GET  /templates/me.svg
-```
-
-요구사항에서 `/auth/register`로 부르던 회원가입 동작은 현재 구현 경로 기준으로 `POST /api/v1/auth/signup`입니다.
-
-`/matches/direct`, `/matches/three-way`, `/templates/me.svg`는 로그인한 사용자 본인의 데이터 기준으로만 응답합니다.
-
-## 관리자 계정
-
-카탈로그 쓰기 API는 `role=admin` 사용자만 접근할 수 있습니다. 공개 관리자 생성 API는 두지 않았고, 관리자 계정은 seed 스크립트로 생성합니다.
-
-일반 사용자는 다음 API로 가입/로그인합니다.
-
-```text
-POST /api/v1/auth/signup
-POST /api/v1/auth/login
-GET  /api/v1/auth/me
-```
-
-카탈로그 조회는 공개이고, 생성/수정/삭제는 관리자 JWT가 필요합니다.
-
-임시 포카 검토와 거절 API도 관리자 JWT가 필요합니다.
-
-```text
-GET /api/v1/admin/pending-photocards?limit=50
-POST /api/v1/admin/pending-photocards/{id}/approve
-POST /api/v1/admin/pending-photocards/{id}/merge
-POST /api/v1/admin/pending-photocards/{id}/reject
-```
-
-승인 요청 body:
-
-```json
-{
-  "group_id": 1,
-  "member_id": 1,
-  "release_id": 1,
-  "name": "공식 포토카드명",
-  "version": "A",
-  "external_url": null,
-  "notes": "임시 포카 메타데이터에서 승인",
-  "reason": "정식 카탈로그로 승인"
-}
-```
-
-승인은 새 정식 `Photocard`를 생성하고, 해당 pending photocard를 참조하던 `UserHave`와 `UserWant`를 새 `photocard_id`로 이전합니다. 이전 후 `pending_photocard_id`는 `NULL`이 됩니다. 이미 승인된 항목에 다시 요청하면 기존 승인 결과를 200으로 반환합니다.
-
-승인 중복 처리 정책:
-
-- `UserWant`: 같은 사용자가 이미 같은 정식 `photocard_id`를 Want로 갖고 있으면 pending 기반 Want는 삭제합니다.
-- `UserHave`: 같은 사용자가 이미 같은 정식 `photocard_id + condition_grade_id`를 Have로 갖고 있으면 pending 기반 Have는 삭제합니다.
-- `UserHave`: 같은 정식 `photocard_id`라도 상태 등급이 다르면 둘 다 유지합니다.
-
-병합 요청 body:
-
-```json
-{
-  "photocard_id": 1,
-  "reason": "기존 정식 포카와 동일"
-}
-```
-
-병합은 기존 정식 `Photocard`를 새로 만들지 않고, 해당 pending photocard를 참조하던 `UserHave`와 `UserWant`를 대상 `photocard_id`로 이전합니다. 이전 후 `pending_photocard_id`는 `NULL`이 됩니다. `rejected` 또는 `approved` 항목은 병합할 수 없으며 409를 반환합니다. 이미 병합된 항목에 다시 요청하면 기존 병합 결과를 200으로 반환합니다.
-
-병합 중복 처리 정책:
-
-- `UserWant`: 같은 사용자가 이미 같은 정식 `photocard_id`를 Want로 갖고 있으면 pending 기반 Want는 삭제합니다.
-- `UserHave`: 같은 사용자가 이미 같은 정식 `photocard_id + condition_grade_id`를 Have로 갖고 있으면 pending 기반 Have는 삭제합니다.
-- `UserHave`: 같은 정식 `photocard_id`라도 상태 등급이 다르면 둘 다 유지합니다.
-
-거절 요청 body:
-
-```json
-{
-  "reason": "정식 카탈로그에 반영하지 않는 사유"
-}
-```
-
-거절은 해당 임시 포카의 `catalog_status`를 `rejected`로 바꾸고 `reviewed_by_admin_id`, `reviewed_at`, `review_reason`을 저장합니다. 이미 거절된 항목에 다시 요청해도 200으로 현재 항목을 반환합니다.
-
-거절은 기존 `UserHave`/`UserWant`를 자동 삭제하지 않습니다. 사용자는 자신의 목록에서 “카탈로그 반영 거절” 배지를 보고 직접 삭제하거나 다른 포카로 수정할 수 있습니다.
-
-## 보안 주의사항
-
-- `.env`는 Git에 커밋하지 않습니다. `.env.example`만 공개합니다.
-- `SECRET_KEY`, DB 비밀번호, seed 관리자 비밀번호는 운영에서 반드시 교체합니다.
-- 비밀번호는 Argon2 기반 해시로 저장하며 평문 저장하지 않습니다.
-- CORS 기본값은 localhost만 허용합니다. 운영 도메인은 명시적으로 추가하세요.
-- 일반 응답에는 `hashed_password`, 내부 권한 필드, 토큰 서명키, 환경변수 값을 포함하지 않습니다.
-- 매칭 및 체크리스트 API는 로그인한 사용자 본인의 데이터만 반환합니다.
-
-## GitHub 업로드 전 점검
-
-업로드 전 아래 명령으로 추적 상태, 무시 파일, 민감 문자열을 점검합니다.
+최근 검증 상태:
+
+- `make test`: 95 passed
+- `npm run build`: 통과
+- Docker Compose: api/db/redis/frontend Up
+- DB healthcheck: healthy
+- Alembic: `202605220001 (head)`
+- `/health`: `{"status":"ok","database":"ok"}`
+- 실제 API 스모크: 회원가입/로그인, Have/Want CRUD, 1:1 매칭, 3자 매칭, SVG 체크리스트, 임시 포카 reject/approve/merge, 오류 정책 확인
+
+## 데모 시나리오
+
+자세한 시연 순서는 [docs/demo-scenario.md](docs/demo-scenario.md)를 참고하세요.
+
+추천 GitHub 데모 흐름:
+
+1. 로그인 화면에서 일반 사용자로 로그인합니다.
+2. Have/Want를 등록합니다.
+3. 1:1 매칭과 3자 매칭을 확인합니다.
+4. 교환 제안 문구를 복사합니다.
+5. 공유용 체크리스트를 엽니다.
+6. 임시 포카를 등록합니다.
+7. 관리자 화면에서 임시 포카를 승인 또는 병합합니다.
+8. 사용자 목록에서 임시 배지가 사라지고 정식 포카로 표시되는지 확인합니다.
+
+## GitHub 공개 전 점검
 
 ```bash
 git status --ignored
@@ -649,119 +402,10 @@ grep -R "SECRET_KEY\\|password\\|token\\|api_key" -n . --exclude-dir=.git --excl
 make test
 ```
 
-`.env`, 로컬 DB 파일, 캐시 디렉터리, 가상환경은 커밋하지 않습니다.
+`.env`, `.env.deploy`, 로컬 DB 파일, 캐시 디렉터리, 가상환경은 커밋하지 않습니다.
 
 ## License
 
 License: TBD
 
 MIT License를 사용할지 결정한 뒤 `LICENSE` 파일을 추가하세요.
-
-## 1:1 직접 매칭
-
-로그인한 사용자는 자신의 보유/원함 목록 기준으로 가능한 1:1 교환 후보만 조회할 수 있습니다. 다른 사용자들끼리의 매칭이나 전체 매칭 목록은 반환하지 않습니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8000/matches/direct
-```
-
-기본 `limit`은 50이고 최대값은 100입니다. 데이터가 많을수록 `limit`을 명시하는 것을 권장합니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  "http://localhost:8000/matches/direct?limit=25"
-```
-
-응답 예시:
-
-```json
-[
-  {
-    "match_type": "direct",
-    "user_a": {"id": 1, "username": "collector_a"},
-    "user_b": {"id": 2, "username": "collector_b"},
-    "user_a_gives": {"photocard": {"id": 1, "group_id": 1, "member_id": 1, "release_id": 1, "name": "Card X", "version": "A", "external_url": null, "notes": null}, "condition_grade": {"id": 2, "code": "A", "label": "A", "description": null, "sort_order": 20}},
-    "user_a_receives": {"photocard": {"id": 2, "group_id": 1, "member_id": 1, "release_id": 1, "name": "Card Y", "version": "B", "external_url": null, "notes": null}, "condition_grade": {"id": 2, "code": "A", "label": "A", "description": null, "sort_order": 20}},
-    "user_b_gives": {"photocard": {"id": 2, "group_id": 1, "member_id": 1, "release_id": 1, "name": "Card Y", "version": "B", "external_url": null, "notes": null}, "condition_grade": {"id": 2, "code": "A", "label": "A", "description": null, "sort_order": 20}},
-    "user_b_receives": {"photocard": {"id": 1, "group_id": 1, "member_id": 1, "release_id": 1, "name": "Card X", "version": "A", "external_url": null, "notes": null}, "condition_grade": {"id": 2, "code": "A", "label": "A", "description": null, "sort_order": 20}},
-    "condition_check": {
-      "user_a_give_meets_user_b_minimum": true,
-      "user_b_give_meets_user_a_minimum": true,
-      "user_a_give_grade": "A",
-      "user_b_minimum_grade": "B",
-      "user_b_give_grade": "A",
-      "user_a_minimum_grade": "B"
-    },
-    "generated_at": "2026-05-21T01:17:00Z"
-  }
-]
-```
-
-상태 등급 우선순위는 `S > A > B > C > D`입니다. `D` 등급은 상대가 명시적으로 `D` 이상을 허용한 경우에만 매칭됩니다.
-
-## 3자 순환 매칭
-
-로그인한 사용자는 자신이 참여한 `A -> B -> C -> A` 형태의 3자 교환 후보만 조회할 수 있습니다. 4자 이상 다자간 매칭이나 전체 매칭 조회 API는 아직 없습니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8000/matches/three-way
-```
-
-기본 `limit`은 50이고 최대값은 100입니다. 데이터가 많을수록 `limit`을 명시하는 것을 권장합니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  "http://localhost:8000/matches/three-way?limit=25"
-```
-
-응답 예시:
-
-```json
-[
-  {
-    "match_type": "three_way",
-    "participants": [
-      {"id": 1, "username": "collector_a"},
-      {"id": 2, "username": "collector_b"},
-      {"id": 3, "username": "collector_c"}
-    ],
-    "trade_edges": [
-      {
-        "giver": {"id": 2, "username": "collector_b"},
-        "receiver": {"id": 1, "username": "collector_a"},
-        "card": {"id": 2, "group_id": 1, "member_id": 1, "release_id": 1, "name": "B Card", "version": null, "external_url": null, "notes": null},
-        "condition_grade": {"id": 2, "code": "A", "label": "A", "description": null, "sort_order": 20},
-        "receiver_min_condition_grade": {"id": 3, "code": "B", "label": "B", "description": null, "sort_order": 30},
-        "condition_passed": true
-      }
-    ],
-    "generated_at": "2026-05-21T01:24:00Z"
-  }
-]
-```
-
-`trade_edges`는 실제 카드 이동 방향입니다. 예시는 한 edge만 줄였지만 실제 응답은 3개 edge를 포함합니다. 같은 순환은 `A-B-C`, `B-C-A`, `C-A-B` 형태로 중복 반환되지 않습니다.
-
-## 공유용 체크리스트
-
-로그인한 사용자는 자신의 보유 카드와 원하는 카드 목록을 텍스트 기반 공유용 체크리스트로 받을 수 있습니다. 체크리스트는 로그인한 사용자 본인 데이터만 렌더링하며, 저작권 있는 포토카드 이미지, 외부 이미지, 외부 CSS, 외부 폰트를 사용하지 않습니다.
-
-사용자 화면에서는 이 기능을 `공유용 체크리스트` 또는 `체크리스트 이미지`로 표현합니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8000/templates/me.svg \
-  -o checklist.svg
-```
-
-기존 prefix 경로도 사용할 수 있습니다.
-
-```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8000/api/v1/templates/me.svg \
-  -o checklist.svg
-```
-
-기술적으로 이 체크리스트는 `/templates/me.svg`에서 생성되는 SVG 응답입니다. 응답은 `image/svg+xml` 계열 Content-Type과 `Cache-Control: private, no-store` 헤더를 사용합니다. 내용에는 `username`, HAVE/WANT 카드 메타데이터, 상태 등급만 들어가며 이메일이나 권한 필드는 포함하지 않습니다.
