@@ -57,7 +57,7 @@ export function WantsPage() {
   });
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(400px,440px)_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(380px,420px)_minmax(520px,1fr)] xl:grid-cols-[minmax(400px,430px)_minmax(0,1fr)]">
       <Card className="w-full">
         <CardHeader>
           <CardTitle>{editing ? "원하는 카드 수정" : "원하는 카드 추가"}</CardTitle>
@@ -92,7 +92,7 @@ export function WantsPage() {
         </CardContent>
       </Card>
 
-      <Card className="min-w-0 self-start lg:min-h-[430px]">
+      <Card className="min-w-0 self-start lg:min-h-[460px]">
         <CardHeader>
           <CardTitle>내 원하는 카드</CardTitle>
           <CardDescription>매칭에서 받고 싶은 카드입니다.</CardDescription>
@@ -101,7 +101,7 @@ export function WantsPage() {
           {wants.isLoading ? <LoadingState /> : null}
           {wants.isError ? <ErrorState message={getFriendlyError(wants.error)} /> : null}
           {wants.data?.length === 0 ? (
-            <div className="grid min-h-72 place-items-center gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+            <div className="grid min-h-80 place-items-center gap-3 rounded-md border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
               <EmptyState title="아직 원하는 카드가 없어요." description="받고 싶은 카드를 추가해보세요." />
               <Button className="w-fit" type="button" variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 원하는 카드 추가하기

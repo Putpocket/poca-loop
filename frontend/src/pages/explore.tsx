@@ -132,7 +132,7 @@ export function ExplorePage() {
           </div>
 
           <div className="grid gap-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-end gap-3 sm:grid-cols-2">
               <ChoiceFilter
                 label="그룹"
                 query={queries.group}
@@ -167,7 +167,7 @@ export function ExplorePage() {
             </div>
 
             {showAdvanced ? (
-              <div className="grid gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid items-end gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
                 <ChoiceFilter
                   label="릴리즈/출처"
                   query={queries.release}
@@ -320,14 +320,14 @@ function ChoiceFilter({
     <section className="relative grid gap-2">
       <span className="text-xs font-medium text-slate-500">{label}</span>
       {selected ? (
-        <div className="flex h-11 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3">
-          <span className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-sm font-medium text-slate-950">{selected.title}</span>
-            {selected.subtitle ? <span className="truncate text-xs text-slate-500">{selected.subtitle}</span> : null}
+        <div className="grid h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+          <span className="grid min-w-0 gap-0.5">
+            <span className="block truncate text-sm font-semibold leading-5 text-slate-950">{selected.title}</span>
+            {selected.subtitle ? <span className="block truncate text-xs leading-4 text-slate-500">{selected.subtitle}</span> : null}
           </span>
           <button
             type="button"
-            className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             onClick={onClear}
             aria-label={`${label} 필터 지우기`}
           >
@@ -338,7 +338,7 @@ function ChoiceFilter({
         <label className="relative">
           <Search className="pointer-events-none absolute left-3 top-3 text-slate-400" size={16} />
           <Input
-            className="h-11 rounded-lg bg-white pl-9"
+            className="h-12 rounded-lg bg-white pl-9"
             placeholder={placeholder}
             value={query}
             onFocus={() => setIsOpen(true)}
