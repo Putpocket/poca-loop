@@ -21,7 +21,9 @@ export function ConditionGuide({ compact = false }: { compact?: boolean }) {
               className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 border-r border-slate-200 px-1.5 py-2 last:border-r-0"
             >
               <Badge className="shrink-0">{item.code}</Badge>
-              <span className="break-keep text-center text-[11px] font-medium leading-4 text-slate-700">{item.short}</span>
+              <span className="flex h-8 items-center break-keep text-center text-[11px] font-medium leading-4 text-slate-700">
+                {item.short}
+              </span>
             </div>
           ))}
         </div>
